@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
@@ -700,22 +701,50 @@ private fun FilmStrip(list: List<MediaItem>, pagerState: androidx.compose.founda
     fun bigW(k: Int): Float = bigHpx * aspects[k]
     fun extra(k: Int): Float = if (k in aspects.indices) bigW(k) + 2f * marginPx - baseWpx else 0f
 
+    val flingJob = remember { arrayOfNulls<kotlinx.coroutines.Job>(1) }
+    val dragState = androidx.compose.foundation.gestures.rememberDraggableState { dx ->
+        val span = (pagerState.layoutInfo.pageSize + pagerState.layoutInfo.pageSpacing).toFloat()
+        pagerState.dispatchRawDelta(-dx / stride * span)
+    }
     Box(
         Modifier
             .padding(bottom = 8.dp)
             .fillMaxWidth()
             .height(80.dp)
-            // Drag the strip to scrub through photos; it settles on the nearest one when released.
-            .pointerInput(pagerState) {
-                detectHorizontalDragGestures(
-                    onDragEnd = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage) } },
-                    onDragCancel = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage) } },
-                ) { change, dx ->
-                    change.consume()
-                    val pageSize = pagerState.layoutInfo.pageSize + pagerState.layoutInfo.pageSpacing
-                    pagerState.dispatchRawDelta(-dx / stride * pageSize)
-                }
-            },
+            // Drag the strip to scrub through photos. Letting go with speed keeps it gliding, slowing to a stop on a photo.
+            .draggable(
+                state = dragState,
+                orientation = androidx.compose.foundation.gestures.Orientation.Horizontal,
+                onDragStarted = { flingJob[0]?.cancel() },
+                onDragStopped = { velocity ->
+                    flingJob[0]?.cancel()
+                    flingJob[0] = scope.launch {
+                        val last = list.lastIndex.toFloat()
+                        var prev = (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, last)
+                        val span = (pagerState.layoutInfo.pageSize + pagerState.layoutInfo.pageSpacing).toFloat()
+                        fun moveTo(v: Float) {
+                            val c = v.coerceIn(0f, last)
+                            pagerState.dispatchRawDelta((c - prev) * span)
+                            prev = c
+                        }
+                        // Content follows the finger, so the position moves opposite to the drag velocity.
+                        androidx.compose.animation.core.animateDecay(
+                            initialValue = prev,
+                            initialVelocity = -velocity / stride,
+                            animationSpec = androidx.compose.animation.core.FloatExponentialDecaySpec(
+                                frictionMultiplier = 0.8f,
+                                absVelocityThreshold = 0.4f,
+                            ),
+                        ) { value, _ -> moveTo(value) }
+                        // Ease onto the nearest photo.
+                        androidx.compose.animation.core.animate(
+                            initialValue = prev,
+                            targetValue = prev.roundToInt().toFloat(),
+                            animationSpec = androidx.compose.animation.core.spring(dampingRatio = 1f, stiffness = 300f),
+                        ) { value, _ -> moveTo(value) }
+                    }
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         val page = pagerState.currentPage

@@ -260,7 +260,7 @@ fun CollectionScreen(
                     }
                 },
                 onSetSelected = { id, on -> vm.setSelected(id, on) },
-                bottomPad = BottomBarSpace + navBottomInset() + (if (trash) 80.dp else 0.dp),
+                bottomPad = BottomBarSpace + navBottomInset(),
                 modifier = Modifier.weight(1f),
                 emptyText = if (trash) "Trash is empty" else if (vault) "Your Vault is empty" else "Nothing here yet",
             )
@@ -271,13 +271,6 @@ fun CollectionScreen(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                androidx.compose.material3.Text(
-                    text = "Photos and videos display the days left until they are permanently deleted.",
-                    color = scheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    fontSize = 14.sp,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
-                )
                 Column(
                     Modifier
                         .fillMaxWidth()

@@ -178,6 +178,22 @@ fun MediaTile(
             DurationBadge(item.durationMs, Modifier.align(Alignment.BottomEnd).padding(6.dp))
         }
 
+        if (item.trashedMs > 0L) {
+            val left = ((item.trashedMs + 30L * 24 * 3600 * 1000 - System.currentTimeMillis()) / (24L * 3600 * 1000) + 1).coerceIn(0L, 30L)
+            Text(
+                text = if (left == 1L) "1 day" else "$left days",
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(6.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.Black.copy(alpha = 0.62f))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            )
+        }
+
         AnimatedVisibility(
             visible = isFav,
             modifier = Modifier
