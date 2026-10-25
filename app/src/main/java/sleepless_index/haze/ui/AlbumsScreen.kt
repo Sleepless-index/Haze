@@ -209,9 +209,6 @@ private fun AlbumActionsDialog(
     )
 }
 
-/** The Recent album shows this many of the newest items. */
-const val RecentLimit = 200
-
 @Composable
 fun AlbumsScreen(
     vm: GalleryViewModel,
@@ -312,18 +309,6 @@ fun AlbumsScreen(
                             count = favorites.size,
                             cover = favorites.first(),
                             onClick = { onOpenSmart("favorites") },
-                        )
-                    }
-                }
-            }
-            if (allItems.isNotEmpty()) {
-                item(key = "album_recent") {
-                    StaggerIn(3) {
-                        AlbumTile(
-                            name = "Recent",
-                            count = minOf(allItems.size, RecentLimit),
-                            cover = allItems.first(),
-                            onClick = { onOpenSmart("recent") },
                         )
                     }
                 }
