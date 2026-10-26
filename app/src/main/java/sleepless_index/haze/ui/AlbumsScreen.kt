@@ -102,6 +102,7 @@ private fun AlbumTile(
     name: String,
     count: Int,
     cover: sleepless_index.haze.data.MediaItem,
+    bytes: Long? = null,
     pinned: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
@@ -152,7 +153,7 @@ private fun AlbumTile(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "%,d items".format(count),
+                text = if (bytes != null) "%,d items · %s".format(count, sleepless_index.haze.data.formatSize(bytes)) else "%,d items".format(count),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurfaceVariant,
@@ -223,6 +224,11 @@ fun AlbumsScreen(
     val allItems by vm.items.collectAsStateWithLifecycle()
     val videos by vm.videos.collectAsStateWithLifecycle()
     val trashed by vm.trashed.collectAsStateWithLifecycle()
+    val sizes = remember(allItems) {
+        val m = HashMap<Long, Long>()
+        for (it in allItems) m[it.bucketId] = (m[it.bucketId] ?: 0L) + it.sizeBytes
+        m
+    }
     val hiddenAlbums by vm.hiddenAlbums.collectAsStateWithLifecycle()
     val prefs by vm.prefs.collectAsStateWithLifecycle()
     var showHidden by rememberSaveable { mutableStateOf(false) }
@@ -307,6 +313,7 @@ fun AlbumsScreen(
                         AlbumTile(
                             name = "Favorites",
                             count = favorites.size,
+                            bytes = favorites.sumOf { it.sizeBytes },
                             cover = favorites.first(),
                             onClick = { onOpenSmart("favorites") },
                         )
@@ -319,6 +326,7 @@ fun AlbumsScreen(
                         AlbumTile(
                             name = "Videos",
                             count = videos.size,
+                            bytes = videos.sumOf { it.sizeBytes },
                             cover = videos.first(),
                             onClick = { onOpenSmart("videos") },
                         )
@@ -331,6 +339,7 @@ fun AlbumsScreen(
                         name = album.name,
                         count = album.count,
                         cover = album.cover,
+                        bytes = sizes[album.bucketId],
                         pinned = album.bucketId in prefs.pinned,
                         onLongClick = {
                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
