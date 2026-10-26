@@ -505,7 +505,7 @@ fun SelectionBar(
             val allFav = has && selected.all { it in favs }
             PillItem(
                 icon = GIcons.Share, label = "Share", selected = false,
-                onClick = { if (has) shareItems(context, source.filter { it.id in selected }) },
+                onClick = { if (has) shareItems(context, source.filter { it.id in selected }, vm.prefs.value.stripLocation) },
                 modifier = Modifier.weight(1f),
             )
             PillItem(

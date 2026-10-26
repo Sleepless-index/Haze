@@ -62,6 +62,7 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     fun setLoop(v: LoopMode) = viewModelScope.launch { g.settings.setLoop(v) }
     fun setShuffle(v: Boolean) = viewModelScope.launch { g.settings.setShuffle(v) }
     fun setAutoNext(v: Boolean) = viewModelScope.launch { g.settings.setAutoNext(v) }
+    fun setStripLocation(v: Boolean) = viewModelScope.launch { g.settings.setStripLocation(v) }
     fun setVaultLock(v: String) = viewModelScope.launch { g.settings.setVaultLock(v) }
     fun setBgPlay(v: Boolean) = viewModelScope.launch { g.settings.setBgPlay(v) }
 

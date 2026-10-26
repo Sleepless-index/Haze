@@ -15,12 +15,12 @@ fun Context.findActivity(): Activity? {
     return null
 }
 
-fun shareItems(context: Context, items: List<MediaItem>) {
+fun shareItems(context: Context, items: List<MediaItem>, stripLocation: Boolean = true) {
     if (items.isEmpty()) return
     // Photos that carry a location are shared as a cleaned copy; everything else goes out as is.
     Thread {
         val uris = items.map { m ->
-            if (m.isVideo || m.id < 0) return@map m.uri
+            if (!stripLocation || m.isVideo || m.id < 0) return@map m.uri
             if (!sleepless_index.haze.data.MetaOps.hasGps(context, m.uri)) return@map m.uri
             val f = sleepless_index.haze.data.MetaOps.strippedCopy(context, m.uri, m.name) ?: return@map m.uri
             androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".share", f)

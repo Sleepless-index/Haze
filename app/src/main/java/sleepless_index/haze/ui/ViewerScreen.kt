@@ -324,7 +324,7 @@ fun ViewerScreen(
                 } else PillBar {
                     PillItem(
                         icon = GIcons.Share, label = "Share", selected = false,
-                        onClick = { sleepless_index.haze.util.shareItems(context, listOf(current)) },
+                        onClick = { sleepless_index.haze.util.shareItems(context, listOf(current), vm.prefs.value.stripLocation) },
                         modifier = Modifier.weight(1f),
                     )
                     PillItem(

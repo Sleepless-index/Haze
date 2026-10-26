@@ -34,6 +34,7 @@ data class Prefs(
     val pinned: Set<Long> = emptySet(),
     val hidden: Set<Long> = emptySet(),
     val vaultLock: String = "",
+    val stripLocation: Boolean = true,
 ) {
     companion object {
         const val ACCENT_LIME = 0xFFD4FF3A.toInt()
@@ -63,6 +64,7 @@ class SettingsStore(private val context: Context) {
     private val kPinned = stringSetPreferencesKey("pinnedAlbums")
     private val kHidden = stringSetPreferencesKey("hiddenAlbums")
     private val kVaultLock = stringPreferencesKey("vaultLock")
+    private val kStripLocation = booleanPreferencesKey("stripLocation")
 
     val flow: Flow<Prefs> = context.dataStore.data.map { p ->
         Prefs(
@@ -81,6 +83,7 @@ class SettingsStore(private val context: Context) {
             pinned = (p[kPinned] ?: emptySet()).mapNotNull { it.toLongOrNull() }.toSet(),
             hidden = (p[kHidden] ?: emptySet()).mapNotNull { it.toLongOrNull() }.toSet(),
             vaultLock = p[kVaultLock] ?: "",
+            stripLocation = p[kStripLocation] ?: true,
         )
     }
 
@@ -98,6 +101,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setBgPlay(v: Boolean) { context.dataStore.edit { it[kBgPlay] = v } }
     suspend fun setTrashDays(v: Int) { context.dataStore.edit { it[kTrashDays] = v } }
 
+    suspend fun setStripLocation(v: Boolean) { context.dataStore.edit { it[kStripLocation] = v } }
     suspend fun setVaultLock(v: String) { context.dataStore.edit { it[kVaultLock] = v } }
 
     suspend fun setPinned(id: Long, on: Boolean) {
