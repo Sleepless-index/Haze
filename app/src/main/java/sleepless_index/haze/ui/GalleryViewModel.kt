@@ -38,6 +38,7 @@ sealed interface UiEvent {
     data class Restore(val uris: List<Uri>) : UiEvent
     data class DeleteForever(val uris: List<Uri>) : UiEvent
     data class Rename(val uri: Uri, val name: String, val id: Long) : UiEvent
+    data class EditMeta(val uri: Uri, val id: Long, val isVideo: Boolean, val dateMs: Long?, val stripGps: Boolean) : UiEvent
     data class Message(val text: String) : UiEvent
 }
 
@@ -291,6 +292,10 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     fun rename(item: MediaItem, newName: String) {
         if (newName == item.name) return
         _events.tryEmit(UiEvent.Rename(item.uri, newName, item.id))
+    }
+
+    fun editMeta(item: MediaItem, dateMs: Long?, stripGps: Boolean) {
+        _events.tryEmit(UiEvent.EditMeta(item.uri, item.id, item.isVideo, dateMs, stripGps))
     }
 
     fun onRenamed(id: Long, newName: String) {

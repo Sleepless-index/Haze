@@ -130,6 +130,8 @@ object GIcons {
             .s("M 3 6 a 3 3 0 1 0 6 0 a 3 3 0 1 0 -6 0 M 3 18 a 3 3 0 1 0 6 0 a 3 3 0 1 0 -6 0 M 8.6 7.6 L 20 19 M 8.6 16.4 L 20 5")
             .build()
     }
+    val Undo: ImageVector by lazy { IconBuilder("Undo").s("M 9 14 L 4 9 l 5 -5 M 4 9 h 10.5 a 5.5 5.5 0 0 1 0 11 H 11").build() }
+    val Redo: ImageVector by lazy { IconBuilder("Redo").s("M 15 14 l 5 -5 l -5 -5 M 20 9 H 9.5 a 5.5 5.5 0 0 0 0 11 H 13").build() }
     val Plus: ImageVector by lazy { IconBuilder("Plus").s("M 12 5 v 14 M 5 12 h 14").build() }
     val Minus: ImageVector by lazy { IconBuilder("Minus").s("M 5 12 h 14").build() }
     val Play: ImageVector by lazy { IconBuilder("Play").f("M 7 4 v 16 l 13 -8 z").build() }

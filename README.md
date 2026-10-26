@@ -9,10 +9,13 @@ A fast, local-only gallery for Android. AMOLED-minimal, no network, no tracking.
 ## Features
 
 - Grid or masonry timeline, fast scroller, search by name, album or month
-- Albums with pin, rename, hide and delete; Favorites, Videos, Trash
-- Viewer with zoom, EXIF/info sheet and blurred ambient background
-- Non-destructive editor: crop, rotate, straighten, adjustments, filters (saves a copy)
-- Video player on Media3: gestures, playback queue with loop/shuffle/autoplay, subtitles, audio tracks, resume, background play, PiP, mirror
+- Albums with pin, rename, hide and delete; Favorites and Videos albums; Trash with days-left badges and delete-all
+- Viewer with zoom, swipeable thumbnail strip, info sheet, Lens search, wallpaper / contact photo, blurred ambient background
+- Vault with its own lock (PIN, pattern or password)
+- Photo editor: crop, rotate, straighten, adjustments, filters, undo / redo (saves a copy)
+- Video editor: trim, crop, rotate, adjustments, filters, mute, undo / redo (exports a copy)
+- Metadata: edit the date taken, remove location, and photos are shared without their GPS position
+- Video player on Media3: gestures, playback queue with loop/shuffle/autoplay, subtitles (including loading .srt / .vtt files), audio tracks, resume, background play, PiP, mirror
 - Theming: AMOLED / Dark / Light, custom accent color
 
 ## Install

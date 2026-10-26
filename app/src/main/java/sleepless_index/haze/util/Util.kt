@@ -17,23 +17,34 @@ fun Context.findActivity(): Activity? {
 
 fun shareItems(context: Context, items: List<MediaItem>) {
     if (items.isEmpty()) return
-    val intent = if (items.size == 1) {
-        Intent(Intent.ACTION_SEND).apply {
-            type = items[0].mime.ifBlank { "*/*" }
-            putExtra(Intent.EXTRA_STREAM, items[0].uri)
+    // Photos that carry a location are shared as a cleaned copy; everything else goes out as is.
+    Thread {
+        val uris = items.map { m ->
+            if (m.isVideo || m.id < 0) return@map m.uri
+            if (!sleepless_index.haze.data.MetaOps.hasGps(context, m.uri)) return@map m.uri
+            val f = sleepless_index.haze.data.MetaOps.strippedCopy(context, m.uri, m.name) ?: return@map m.uri
+            androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".share", f)
         }
-    } else {
-        Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-            type = when {
-                items.all { it.isVideo } -> "video/*"
-                items.none { it.isVideo } -> "image/*"
-                else -> "*/*"
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            val intent = if (items.size == 1) {
+                Intent(Intent.ACTION_SEND).apply {
+                    type = items[0].mime.ifBlank { "*/*" }
+                    putExtra(Intent.EXTRA_STREAM, uris[0])
+                }
+            } else {
+                Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                    type = when {
+                        items.all { it.isVideo } -> "video/*"
+                        items.none { it.isVideo } -> "image/*"
+                        else -> "*/*"
+                    }
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+                }
             }
-            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(items.map { it.uri }))
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(Intent.createChooser(intent, null))
         }
-    }
-    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    context.startActivity(Intent.createChooser(intent, null))
+    }.start()
 }
 
 /**

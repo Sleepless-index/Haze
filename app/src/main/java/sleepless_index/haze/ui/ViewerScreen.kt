@@ -350,7 +350,8 @@ fun ViewerScreen(
     }
 
     if (showInfo) {
-        InfoSheet(item = current, translucent = blurOn, onDismiss = { showInfo = false }, onRename = { vm.rename(current, it) })
+        InfoSheet(item = current, translucent = blurOn, onDismiss = { showInfo = false }, onRename = { vm.rename(current, it) },
+            onEditDate = { vm.editMeta(current, it, false) }, onRemoveLocation = { vm.editMeta(current, null, true) })
     }
     picker?.let { move ->
         AlbumPickerSheet(vm = vm, items = listOf(current), move = move, onDismiss = { picker = null })

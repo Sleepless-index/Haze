@@ -301,6 +301,22 @@ fun VideoEditorScreen(vm: GalleryViewModel, itemId: Long, onClose: () -> Unit) {
         }
     }
 
+    val history = sleepless_index.haze.editor.rememberEditHistory(
+        read = {
+            VideoEdit(
+                quarter, flip, aspectIdx, crop, brightness, contrast, saturation, warmth, gray, lookIdx,
+                startMs, if (endMs >= durationMs) -1L else endMs, mute,
+            )
+        },
+        write = {
+            quarter = it.quarter; flip = it.flip; aspectIdx = it.aspectIdx; crop = it.crop
+            brightness = it.brightness; contrast = it.contrast; saturation = it.saturation; warmth = it.warmth
+            gray = it.gray; lookIdx = it.lookIdx
+            startMs = it.startMs; endMs = if (it.endMs < 0) durationMs else it.endMs; mute = it.mute
+            seekPreview(startMs)
+        },
+    )
+
     fun resetCrop() {
         aspectIdx = 0
         crop = CropRect.Full
@@ -417,6 +433,7 @@ fun VideoEditorScreen(vm: GalleryViewModel, itemId: Long, onClose: () -> Unit) {
                 "Edit", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = cs.onBackground,
                 modifier = Modifier.weight(1f).padding(start = 14.dp),
             )
+            sleepless_index.haze.editor.UndoRedo(history)
             if (hasEdits) {
                 Text(
                     "Reset", color = cs.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
@@ -839,3 +856,9 @@ private fun formatTime(ms: Long): String {
     val tenths = (total % 1000) / 100
     return "${formatDuration(total)}.$tenths"
 }
+
+private data class VideoEdit(
+    val quarter: Int, val flip: Boolean, val aspectIdx: Int, val crop: CropRect,
+    val brightness: Float, val contrast: Float, val saturation: Float, val warmth: Float,
+    val gray: Boolean, val lookIdx: Int, val startMs: Long, val endMs: Long, val mute: Boolean,
+)

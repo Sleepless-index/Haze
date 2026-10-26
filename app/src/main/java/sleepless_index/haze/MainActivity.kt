@@ -43,6 +43,7 @@ class MainActivity : FragmentActivity() {
     private val legacyDeleteQueue = ArrayDeque<Uri>()
 
     private var pendingRename: UiEvent.Rename? = null
+    private var pendingMeta: UiEvent.EditMeta? = null
 
     private val intentSenderLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
@@ -50,6 +51,11 @@ class MainActivity : FragmentActivity() {
             pendingRename?.let { r ->
                 pendingRename = null
                 if (ok) applyRename(r)
+                return@registerForActivityResult
+            }
+            pendingMeta?.let { m ->
+                pendingMeta = null
+                if (ok) applyMeta(m)
                 return@registerForActivityResult
             }
             if (Build.VERSION.SDK_INT < 30 && legacyDeleteQueue.isNotEmpty()) {
@@ -181,6 +187,7 @@ class MainActivity : FragmentActivity() {
             is UiEvent.Restore -> trash(event.uris, false)
             is UiEvent.DeleteForever -> deleteForever(event.uris)
             is UiEvent.Rename -> rename(event)
+            is UiEvent.EditMeta -> applyMeta(event)
             is UiEvent.Message -> Toast.makeText(this, event.text, Toast.LENGTH_SHORT).show()
         }
     }
@@ -205,6 +212,26 @@ class MainActivity : FragmentActivity() {
     } catch (e: Exception) {
         Toast.makeText(this, "Couldn't rename (name may already exist)", Toast.LENGTH_SHORT).show()
         false
+    }
+
+    private fun applyMeta(m: UiEvent.EditMeta) {
+        try {
+            sleepless_index.haze.data.MetaOps.edit(this, m.uri, m.isVideo, m.dateMs, m.stripGps)
+            Toast.makeText(this, if (m.stripGps) "Location removed" else "Date updated", Toast.LENGTH_SHORT).show()
+            vm.refresh()
+        } catch (e: RecoverableSecurityException) {
+            pendingMeta = m
+            launchSender(e.userAction.actionIntent.intentSender)
+        } catch (e: SecurityException) {
+            if (Build.VERSION.SDK_INT >= 30) {
+                pendingMeta = m
+                launchSender(MediaStore.createWriteRequest(contentResolver, listOf(m.uri)).intentSender)
+            } else {
+                Toast.makeText(this, "Couldn't edit this file", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Couldn't edit this file", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun rename(r: UiEvent.Rename) {

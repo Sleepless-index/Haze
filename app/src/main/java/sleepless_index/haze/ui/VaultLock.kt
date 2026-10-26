@@ -317,7 +317,7 @@ fun LockSetup(title: String, onDone: (type: String, secret: String) -> Unit, onC
         lowered = t == VaultLockStore.PIN || t == VaultLockStore.PATTERN,
     ) {
         if (t == null) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 4.dp)) {
                 listOf(VaultLockStore.PIN to "PIN", VaultLockStore.PATTERN to "Pattern", VaultLockStore.PASSWORD to "Password").forEach { (k, label) ->
                     sleepless_index.haze.editor.Chip(label, false) { type = k }
                 }

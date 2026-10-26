@@ -358,6 +358,14 @@ fun EditorScreen(vm: GalleryViewModel, itemId: Long, onClose: () -> Unit) {
     val hasEdits = quarter % 4 != 0 || flip || straighten != 0f || crop != Crop.Full ||
         brightness != 0f || contrast != 1f || saturation != 1f || warmth != 0f || filterIdx != 0
 
+    val history = rememberEditHistory(
+        read = { PhotoEdit(quarter, flip, straighten, aspectIdx, crop, brightness, contrast, saturation, warmth, filterIdx) },
+        write = {
+            quarter = it.quarter; flip = it.flip; straighten = it.straighten; aspectIdx = it.aspectIdx; crop = it.crop
+            brightness = it.brightness; contrast = it.contrast; saturation = it.saturation; warmth = it.warmth; filterIdx = it.filterIdx
+        },
+    )
+
     fun resetCrop() {
         aspectIdx = 0
         crop = Crop.Full
@@ -413,6 +421,7 @@ fun EditorScreen(vm: GalleryViewModel, itemId: Long, onClose: () -> Unit) {
                     .weight(1f)
                     .padding(start = 14.dp),
             )
+            UndoRedo(history)
             if (hasEdits) {
                 Text(
                     "Reset", color = cs.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
@@ -591,3 +600,8 @@ fun EditorScreen(vm: GalleryViewModel, itemId: Long, onClose: () -> Unit) {
         }
     }
 }
+
+private data class PhotoEdit(
+    val quarter: Int, val flip: Boolean, val straighten: Float, val aspectIdx: Int, val crop: Crop,
+    val brightness: Float, val contrast: Float, val saturation: Float, val warmth: Float, val filterIdx: Int,
+)

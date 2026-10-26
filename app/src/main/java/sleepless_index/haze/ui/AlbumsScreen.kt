@@ -313,6 +313,18 @@ fun AlbumsScreen(
                     }
                 }
             }
+            if (videos.isNotEmpty()) {
+                item(key = "album_videos") {
+                    StaggerIn(3) {
+                        AlbumTile(
+                            name = "Videos",
+                            count = videos.size,
+                            cover = videos.first(),
+                            onClick = { onOpenSmart("videos") },
+                        )
+                    }
+                }
+            }
             itemsIndexed(albums, key = { _, a -> "album_${a.bucketId}" }) { index, album ->
                 StaggerIn(index + 4) {
                     AlbumTile(

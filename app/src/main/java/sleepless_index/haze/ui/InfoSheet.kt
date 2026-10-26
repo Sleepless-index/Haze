@@ -69,6 +69,8 @@ fun InfoSheet(
     translucent: Boolean,
     onDismiss: () -> Unit,
     onRename: (String) -> Unit,
+    onEditDate: (Long) -> Unit = {},
+    onRemoveLocation: () -> Unit = {},
 ) {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -77,6 +79,7 @@ fun InfoSheet(
     val whenText = dateFmt.format(Instant.ofEpochMilli(item.dateMs).atZone(ZoneId.systemDefault()))
     val card = RoundedCornerShape(24.dp)
     var renaming by remember { mutableStateOf(false) }
+    var removingLocation by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -94,17 +97,48 @@ fun InfoSheet(
         ) {
             // Header card: when it was taken
             Box(Modifier.fillMaxWidth().clip(card).background((if (translucent) cs.surfaceVariant.copy(alpha = 0.6f) else cs.surfaceVariant)).padding(horizontal = 20.dp, vertical = 18.dp)) {
-                Text(whenText, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = cs.onBackground)
+                Text(whenText, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = cs.onBackground, modifier = Modifier.align(Alignment.CenterStart).padding(end = 60.dp))
+                if (item.id >= 0) {
+                    Text(
+                        "Edit", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(cs.surface.copy(alpha = 0.7f))
+                            .bounceClick(onClick = { pickDate(context, item.dateMs, onEditDate) })
+                            .padding(horizontal = 16.dp, vertical = 9.dp),
+                    )
+                }
             }
 
             // Detail rows
             Column(
                 Modifier.fillMaxWidth().clip(card).background((if (translucent) cs.surfaceVariant.copy(alpha = 0.6f) else cs.surfaceVariant)).padding(vertical = 6.dp),
             ) {
-                for (r in info.rows) InfoLine(r, onEdit = if (r.title == "Label" && item.id >= 0) ({ renaming = true }) else null)
+                for (r in info.rows) InfoLine(
+                    r,
+                    onEdit = when {
+                        r.title == "Label" && item.id >= 0 -> ({ renaming = true })
+                        r.title == "Location" && item.id >= 0 -> ({ removingLocation = true })
+                        else -> null
+                    },
+                    editLabel = if (r.title == "Location") "Remove" else "Edit",
+                )
             }
 
         }
+    }
+    if (removingLocation) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { removingLocation = false },
+            containerColor = cs.surface,
+            title = { Text("Remove location?", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+            text = { Text("The GPS position will be erased from this photo's file. This can't be undone.", color = cs.onSurfaceVariant) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { removingLocation = false; onRemoveLocation() }) { Text("Remove") }
+            },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { removingLocation = false }) { Text("Cancel") } },
+        )
     }
     if (renaming) RenameDialog(item.name, onDismiss = { renaming = false }, onConfirm = { renaming = false; onRename(it) })
 }
@@ -136,7 +170,7 @@ private fun RenameDialog(current: String, onDismiss: () -> Unit, onConfirm: (Str
 }
 
 @Composable
-private fun InfoLine(row: InfoRow, onEdit: (() -> Unit)? = null) {
+private fun InfoLine(row: InfoRow, onEdit: (() -> Unit)? = null, editLabel: String = "Edit") {
     val cs = MaterialTheme.colorScheme
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -155,7 +189,7 @@ private fun InfoLine(row: InfoRow, onEdit: (() -> Unit)? = null) {
         }
         if (onEdit != null) {
             Text(
-                "Edit", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground,
+                editLabel, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground,
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
                     .background(cs.surface.copy(alpha = 0.7f))
@@ -164,6 +198,17 @@ private fun InfoLine(row: InfoRow, onEdit: (() -> Unit)? = null) {
             )
         }
     }
+}
+
+/** Platform date then time pickers; reports the chosen moment in epoch millis. */
+private fun pickDate(context: Context, initialMs: Long, onPicked: (Long) -> Unit) {
+    val c = java.util.Calendar.getInstance().apply { timeInMillis = initialMs }
+    android.app.DatePickerDialog(context, { _, y, m, d ->
+        android.app.TimePickerDialog(context, { _, h, min ->
+            val r = java.util.Calendar.getInstance().apply { set(y, m, d, h, min, 0); set(java.util.Calendar.MILLISECOND, 0) }
+            onPicked(r.timeInMillis)
+        }, c.get(java.util.Calendar.HOUR_OF_DAY), c.get(java.util.Calendar.MINUTE), false).show()
+    }, c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH), c.get(java.util.Calendar.DAY_OF_MONTH)).show()
 }
 
 private fun openExif(context: Context, uri: android.net.Uri): ExifInterface? =

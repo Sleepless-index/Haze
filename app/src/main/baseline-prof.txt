@@ -20,3 +20,6 @@ HSPLandroidx/activity/**->**(**)**
 HSPLandroidx/lifecycle/**->**(**)**
 HSPLandroidx/navigation/**->**(**)**
 HSPLandroidx/datastore/**->**(**)**
+HSPLandroidx/media3/**->**(**)**
+HSPLandroidx/exifinterface/**->**(**)**
+HSPLandroidx/room/**->**(**)**
