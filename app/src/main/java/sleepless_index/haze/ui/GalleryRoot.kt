@@ -126,14 +126,7 @@ fun GalleryRoot(
                 enterTransition = { slideInHorizontally(tween(300)) { it / 5 } + fadeIn(tween(300)) },
                 popExitTransition = { slideOutHorizontally(tween(260)) { it / 5 } + fadeOut(tween(220)) },
             ) {
-                SettingsScreen(
-                    vm = vm,
-                    perms = perms,
-                    onBack = { nav.popBackStack() },
-                    onOpenPermissions = { nav.navigate("permissions") },
-                    onOpenVault = { nav.navigate("vault") },
-                    onOpenTrash = { nav.navigate("smart/trash") },
-                )
+                SettingsScreen(vm, onBack = { nav.popBackStack() }, onOpenPermissions = { nav.navigate("permissions") })
             }
             composable(
                 route = "permissions",

@@ -17,7 +17,6 @@ A fast, local-only gallery for Android. AMOLED-minimal, no network, no tracking.
 - Metadata: edit the date taken, remove location, and photos are shared without their GPS position
 - Video player on Media3: gestures, playback queue with loop/shuffle/autoplay, subtitles (including loading .srt / .vtt files), audio tracks, resume, background play, PiP, mirror
 - Details sheet: date, file, camera, location and path cards
-- Settings in sections: appearance, layout, viewer, video, privacy, storage
 - Theming: AMOLED / Dark / Light, custom accent color
 
 ## Install

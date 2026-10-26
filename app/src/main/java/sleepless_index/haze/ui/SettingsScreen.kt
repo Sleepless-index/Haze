@@ -36,7 +36,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -171,19 +170,16 @@ private fun CardGroup(modifier: Modifier = Modifier, content: @Composable () -> 
 }
 
 @Composable
-private fun ToggleRow(title: String, checked: Boolean, description: String? = null, onChange: (Boolean) -> Unit) {
+private fun ToggleRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     val cs = MaterialTheme.colorScheme
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .padding(horizontal = 16.dp, vertical = if (description != null) 12.dp else 0.dp),
+            .height(56.dp)
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
-            if (description != null) Text(description, fontSize = 13.sp, lineHeight = 18.sp, color = cs.onSurfaceVariant)
-        }
+        Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
         Switch(
             checked = checked,
             onCheckedChange = onChange,
@@ -377,401 +373,167 @@ private fun CustomColorDialog(initial: Int, onDismiss: () -> Unit, onApply: (Int
 
 private fun hexOf(c: Color): String = "#%06X".format(c.toArgb() and 0xFFFFFF)
 
-private enum class SettingsPage { Home, Appearance, Layout, Viewer, Video, Privacy, Storage }
-
 @Composable
-private fun Pill(text: String, onClick: () -> Unit) {
-    val cs = MaterialTheme.colorScheme
-    Text(
-        text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground,
-        modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(cs.surfaceVariant)
-            .bounceClick(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
-    )
-}
-
-@Composable
-private fun IconTile(icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    val cs = MaterialTheme.colorScheme
-    Box(
-        Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(cs.surfaceVariant),
-        contentAlignment = Alignment.Center,
-    ) { Icon(icon, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp)) }
-}
-
-@Composable
-private fun NavRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String, onClick: () -> Unit) {
-    val cs = MaterialTheme.colorScheme
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .bounceClick(onClick = onClick)
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        IconTile(icon)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
-            Text(value, fontSize = 12.5.sp, color = cs.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-        }
-        Icon(GIcons.ChevronRight, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp))
-    }
-}
-
-@Composable
-private fun InsetDivider() {
-    Box(Modifier.padding(start = 66.dp).fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outline))
-}
-
-@Composable
-private fun StatusRow(title: String, note: String, on: Boolean) {
-    val cs = MaterialTheme.colorScheme
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
-            Text(note, fontSize = 12.5.sp, color = cs.onSurfaceVariant)
-        }
-        if (on) Icon(GIcons.Check, null, tint = cs.primary, modifier = Modifier.size(16.dp))
-        Text(
-            if (on) "On" else "Off", fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-            color = if (on) cs.primary else cs.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun ThemePreview() {
-    val cs = MaterialTheme.colorScheme
-    val tiles = listOf(
-        0xFF3B5B8A to 0xFF1D2B44, 0xFFC9825A to 0xFF5B3A3A, 0xFF4F7A62 to 0xFF1F3A2C, 0xFF7A6AA8 to 0xFF2C2548,
-        0xFF8A7A52 to 0xFF3A3220, 0xFF5A8AA8 to 0xFF203244, 0xFFA85A6A to 0xFF442030, 0xFF6A6A72 to 0xFF26262B,
-    )
-    val shape = RoundedCornerShape(22.dp)
-    Column(
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth()
-            .clip(shape)
-            .background(cs.background)
-            .border(BorderStroke(1.dp, cs.outline), shape)
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Today", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onBackground, modifier = Modifier.weight(1f))
-            Box(Modifier.size(22.dp).clip(CircleShape).background(cs.primary), contentAlignment = Alignment.Center) {
-                Icon(GIcons.Check, null, tint = cs.onPrimary, modifier = Modifier.size(13.dp))
-            }
-        }
-        for (row in 0..1) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                for (i in 0..3) {
-                    val (a, b) = tiles[row * 4 + i]
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .height(62.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Brush.linearGradient(listOf(Color(a), Color(b)))),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SettingsScreen(
-    vm: GalleryViewModel,
-    perms: PermState,
-    onBack: () -> Unit,
-    onOpenPermissions: () -> Unit,
-    onOpenVault: () -> Unit,
-    onOpenTrash: () -> Unit,
-) {
+fun SettingsScreen(vm: GalleryViewModel, onBack: () -> Unit, onOpenPermissions: () -> Unit) {
     val prefs by vm.prefs.collectAsStateWithLifecycle()
     val cs = MaterialTheme.colorScheme
-    val context = androidx.compose.ui.platform.LocalContext.current
     var showCustom by remember { mutableStateOf(false) }
-    var page by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(SettingsPage.Home) }
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val isPreset = Presets.any { it.second == prefs.accent }
-    val version = remember {
-        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: ""
-    }
-
-    androidx.activity.compose.BackHandler(enabled = page != SettingsPage.Home) { page = SettingsPage.Home }
-
-    val themeName = when (prefs.theme) { ThemeMode.AMOLED -> "AMOLED"; ThemeMode.DARK -> "Dark"; ThemeMode.LIGHT -> "Light" }
-    val layoutName = if (prefs.layout == LayoutMode.GRID) "Grid" else "Masonry"
-    fun onOff(b: Boolean) = if (b) "on" else "off"
-    val lockName = when (VaultLockStore.typeOf(prefs.vaultLock)) {
-        VaultLockStore.PIN -> "PIN"
-        VaultLockStore.PATTERN -> "Pattern"
-        VaultLockStore.PASSWORD -> "Password"
-        else -> "Not set"
-    }
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         ScreenHeader(
-            title = when (page) {
-                SettingsPage.Home -> "Settings"
-                SettingsPage.Appearance -> "Appearance"
-                SettingsPage.Layout -> "Gallery layout"
-                SettingsPage.Viewer -> "Viewer"
-                SettingsPage.Video -> "Video"
-                SettingsPage.Privacy -> "Privacy"
-                SettingsPage.Storage -> "Storage and permissions"
-            },
+            title = "Settings",
             subtitle = "",
             leading = {
-                GIconButton(GIcons.Back, "Back", onClick = { if (page == SettingsPage.Home) onBack() else page = SettingsPage.Home })
+                GIconButton(GIcons.Back, "Back", onClick = onBack)
                 Box(Modifier.size(12.dp))
             },
         )
-        androidx.compose.animation.AnimatedContent(
-            targetState = page,
-            transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(140)) },
-            label = "settingsPage",
-            modifier = Modifier.fillMaxSize(),
-        ) { p ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(top = 6.dp, bottom = 100.dp + navBottom),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 100.dp + navBottom),
+        ) {
+            SectionLabel("Layout")
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                when (p) {
-                    SettingsPage.Home -> {
-                        val shape = RoundedCornerShape(22.dp)
-                        Row(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .fillMaxWidth()
-                                .clip(shape)
-                                .background(cs.surface)
-                                .border(BorderStroke(1.dp, cs.outline), shape)
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        ) {
-                            Box(
-                                Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(cs.background)
-                                    .border(BorderStroke(1.dp, cs.outline), RoundedCornerShape(16.dp)),
-                            ) {
-                                Box(Modifier.padding(start = 10.dp, top = 14.dp).size(width = 34.dp, height = 26.dp).clip(RoundedCornerShape(14.dp)).background(cs.primary.copy(alpha = 0.55f)))
-                                Box(Modifier.padding(start = 16.dp, top = 8.dp).size(width = 26.dp, height = 20.dp).clip(RoundedCornerShape(12.dp)).background(cs.primary.copy(alpha = 0.4f)))
-                            }
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text("Haze", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = cs.onBackground)
-                                Text(
-                                    if (version.isNotEmpty()) "Version $version · Local only, no network" else "Local only, no network",
-                                    fontSize = 13.sp, color = cs.onSurfaceVariant,
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(14.dp))
-                        CardGroup {
-                            NavRow(GIcons.Brightness, "Appearance", "$themeName · ${if (isPreset) "Default" else "Custom"} accent") { page = SettingsPage.Appearance }
-                            InsetDivider()
-                            NavRow(GIcons.Photos, "Gallery layout", "$layoutName · ${prefs.columns} columns") { page = SettingsPage.Layout }
-                        }
-                        Spacer(Modifier.height(14.dp))
-                        CardGroup {
-                            NavRow(GIcons.Image, "Viewer", "Blurred backgrounds ${onOff(prefs.blur)}") { page = SettingsPage.Viewer }
-                            InsetDivider()
-                            NavRow(GIcons.Play, "Video", "Resume ${onOff(prefs.resume)} · Autoplay ${onOff(prefs.autoplay)}") { page = SettingsPage.Video }
-                        }
-                        Spacer(Modifier.height(14.dp))
-                        CardGroup {
-                            NavRow(GIcons.Lock, "Privacy", "Vault $lockName · Location ${if (prefs.stripLocation) "removed" else "kept"} on share") { page = SettingsPage.Privacy }
-                            InsetDivider()
-                            NavRow(GIcons.SdCard, "Storage and permissions", "All files access ${onOff(perms.allFiles)}") { page = SettingsPage.Storage }
-                        }
-                    }
+                LayoutCard(
+                    title = "Grid",
+                    selected = prefs.layout == LayoutMode.GRID,
+                    onClick = { vm.setLayout(LayoutMode.GRID) },
+                    modifier = Modifier.weight(1f),
+                ) { GridPreview() }
+                LayoutCard(
+                    title = "Masonry",
+                    selected = prefs.layout == LayoutMode.MASONRY,
+                    onClick = { vm.setLayout(LayoutMode.MASONRY) },
+                    modifier = Modifier.weight(1f),
+                ) { MasonryPreview() }
+            }
 
-                    SettingsPage.Appearance -> {
-                        ThemePreview()
-                        SectionLabel("Theme")
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            listOf(ThemeMode.AMOLED to "AMOLED", ThemeMode.DARK to "Dark", ThemeMode.LIGHT to "Light").forEach { (mode, label) ->
-                                ThemeChip(
-                                    label = label,
-                                    active = prefs.theme == mode,
-                                    onClick = { vm.setTheme(mode) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
-                        SectionLabel("Accent color")
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp),
-                            horizontalArrangement = Arrangement.spacedBy(24.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Presets.forEach { (name, argb) ->
-                                Swatch(
-                                    color = Color(argb),
-                                    selected = prefs.accent == argb,
-                                    label = name,
-                                    onClick = { vm.setAccent(argb) },
-                                )
-                            }
-                            Swatch(
-                                color = if (isPreset) cs.surfaceVariant else Color(prefs.accent),
-                                selected = !isPreset,
-                                label = "Custom",
-                                content = {
-                                    if (isPreset) {
-                                        Icon(GIcons.Plus, contentDescription = "Custom color", tint = cs.onBackground, modifier = Modifier.size(18.dp))
-                                    }
-                                },
-                                onClick = { showCustom = true },
-                            )
-                        }
+            Spacer(Modifier.height(12.dp))
+            CardGroup {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Grid columns", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        color = cs.onBackground, modifier = Modifier.weight(1f),
+                    )
+                    GIconButton(
+                        GIcons.Minus, "Fewer columns", onClick = { vm.setColumns(prefs.columns - 1) },
+                        size = 34.dp, tint = if (prefs.columns > 2) cs.onBackground else cs.onSurfaceVariant,
+                    )
+                    AnimatedContent(
+                        targetState = prefs.columns,
+                        transitionSpec = {
+                            val up = targetState > initialState
+                            val enter = slideInVertically(tween(180)) { if (up) -it else it } + fadeIn(tween(180))
+                            val exit = slideOutVertically(tween(180)) { if (up) it else -it } + fadeOut(tween(120))
+                            (enter togetherWith exit).using(SizeTransform(clip = false))
+                        },
+                        label = "columnCount",
+                        modifier = Modifier.padding(horizontal = 14.dp),
+                    ) { n ->
+                        Text("$n", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = cs.onBackground)
                     }
+                    GIconButton(
+                        GIcons.Plus, "More columns", onClick = { vm.setColumns(prefs.columns + 1) },
+                        size = 34.dp, tint = if (prefs.columns < 6) cs.onBackground else cs.onSurfaceVariant,
+                    )
+                }
+            }
 
-                    SettingsPage.Layout -> {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            LayoutCard(
-                                title = "Grid",
-                                selected = prefs.layout == LayoutMode.GRID,
-                                onClick = { vm.setLayout(LayoutMode.GRID) },
-                                modifier = Modifier.weight(1f),
-                            ) { GridPreview() }
-                            LayoutCard(
-                                title = "Masonry",
-                                selected = prefs.layout == LayoutMode.MASONRY,
-                                onClick = { vm.setLayout(LayoutMode.MASONRY) },
-                                modifier = Modifier.weight(1f),
-                            ) { MasonryPreview() }
+            SectionLabel("Accent color")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Presets.forEach { (name, argb) ->
+                    Swatch(
+                        color = Color(argb),
+                        selected = prefs.accent == argb,
+                        label = name,
+                        onClick = { vm.setAccent(argb) },
+                    )
+                }
+                Swatch(
+                    color = if (isPreset) cs.surfaceVariant else Color(prefs.accent),
+                    selected = !isPreset,
+                    label = "Custom",
+                    content = {
+                        if (isPreset) {
+                            Icon(GIcons.Plus, contentDescription = "Custom color", tint = cs.onBackground, modifier = Modifier.size(18.dp))
                         }
-                        Spacer(Modifier.height(12.dp))
-                        CardGroup {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    "Grid columns", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                                    color = cs.onBackground, modifier = Modifier.weight(1f),
-                                )
-                                GIconButton(
-                                    GIcons.Minus, "Fewer columns", onClick = { vm.setColumns(prefs.columns - 1) },
-                                    size = 34.dp, tint = if (prefs.columns > 2) cs.onBackground else cs.onSurfaceVariant,
-                                )
-                                AnimatedContent(
-                                    targetState = prefs.columns,
-                                    transitionSpec = {
-                                        val up = targetState > initialState
-                                        val enter = slideInVertically(tween(180)) { if (up) -it else it } + fadeIn(tween(180))
-                                        val exit = slideOutVertically(tween(180)) { if (up) it else -it } + fadeOut(tween(120))
-                                        (enter togetherWith exit).using(SizeTransform(clip = false))
-                                    },
-                                    label = "columnCount",
-                                    modifier = Modifier.padding(horizontal = 14.dp),
-                                ) { n ->
-                                    Text("$n", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = cs.onBackground)
-                                }
-                                GIconButton(
-                                    GIcons.Plus, "More columns", onClick = { vm.setColumns(prefs.columns + 1) },
-                                    size = 34.dp, tint = if (prefs.columns < 6) cs.onBackground else cs.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
+                    },
+                    onClick = { showCustom = true },
+                )
+            }
 
-                    SettingsPage.Viewer -> CardGroup {
-                        ToggleRow("Blurred backgrounds", prefs.blur, "Soft blur behind photos and the details sheet.") { vm.setBlur(it) }
-                    }
+            SectionLabel("Theme")
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                listOf(ThemeMode.AMOLED to "AMOLED", ThemeMode.DARK to "Dark", ThemeMode.LIGHT to "Light").forEach { (mode, label) ->
+                    ThemeChip(
+                        label = label,
+                        active = prefs.theme == mode,
+                        onClick = { vm.setTheme(mode) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
 
-                    SettingsPage.Video -> CardGroup {
-                        ToggleRow("Resume where you left off", prefs.resume) { vm.setResume(it) }
-                        Box(Modifier.fillMaxWidth().height(1.dp).background(cs.outline))
-                        ToggleRow("Autoplay when opened", prefs.autoplay) { vm.setAutoplay(it) }
-                    }
+            SectionLabel("Video")
+            CardGroup {
+                ToggleRow("Resume where you left off", prefs.resume) { vm.setResume(it) }
+                Box(Modifier.fillMaxWidth().height(1.dp).background(cs.outline))
+                ToggleRow("Autoplay when opened", prefs.autoplay) { vm.setAutoplay(it) }
+            }
 
-                    SettingsPage.Privacy -> {
-                        SectionLabel("Vault")
-                        CardGroup {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                            ) {
-                                IconTile(GIcons.Lock)
-                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                                    Text("Vault lock", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
-                                    Text(lockName, fontSize = 12.5.sp, color = cs.onSurfaceVariant)
-                                }
-                                Pill("Open") { onOpenVault() }
-                            }
-                            Text(
-                                "Hidden photos stay inside Haze and need this lock to open. To change it, open the vault and tap the lock icon. A forgotten lock can't be recovered.",
-                                fontSize = 13.sp, lineHeight = 19.sp, color = cs.onSurfaceVariant,
-                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                            )
-                        }
-                        SectionLabel("Sharing")
-                        CardGroup {
-                            ToggleRow(
-                                "Remove location when sharing", prefs.stripLocation,
-                                "Photos are copied without GPS before they leave Haze. Your originals are untouched.",
-                            ) { vm.setStripLocation(it) }
-                        }
-                    }
+            SectionLabel("Viewer")
+            CardGroup {
+                ToggleRow("Blurred backgrounds (photo & details)", prefs.blur) { vm.setBlur(it) }
+            }
 
-                    SettingsPage.Storage -> {
-                        SectionLabel("Permissions")
-                        CardGroup {
-                            StatusRow("Photos and videos", "Read access", perms.media)
-                            Box(Modifier.fillMaxWidth().padding(start = 16.dp).height(1.dp).background(cs.outline))
-                            StatusRow("All files access", "Faster moves, full EXIF and editing in place", perms.allFiles)
-                            Box(Modifier.fillMaxWidth().padding(start = 16.dp).height(1.dp).background(cs.outline))
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("Manage permissions", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
-                                Pill("Manage") { onOpenPermissions() }
-                            }
-                        }
-                        if (Build.VERSION.SDK_INT >= 30) {
-                            SectionLabel("Trash")
-                            CardGroup {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                ) {
-                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                                        Text("Trash", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
-                                        Text("Items are deleted after ${prefs.trashDays} days", fontSize = 12.5.sp, color = cs.onSurfaceVariant)
-                                    }
-                                    Pill("Open") { onOpenTrash() }
-                                }
-                            }
-                        }
-                    }
+            SectionLabel("Storage")
+            CardGroup {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .bounceClick(onClick = onOpenPermissions)
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Permissions", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
+                    Text("Manage", fontSize = 13.sp, color = cs.onSurfaceVariant)
+                }
+            }
+
+            SectionLabel("About")
+            CardGroup {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Haze", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
+                    Text("v0.1.0", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant)
                 }
             }
         }
