@@ -33,6 +33,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** One-off requests the Activity has to carry out (they need system dialogs). */
+/** What this clean-up session has moved to Trash so far. */
+data class CleanupFreed(val ids: List<Long>, val bytes: Long)
+
 sealed interface UiEvent {
     data class Trash(val uris: List<Uri>) : UiEvent
     data class Restore(val uris: List<Uri>) : UiEvent
@@ -115,6 +118,47 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _trashed = MutableStateFlow<List<MediaItem>>(emptyList())
     val trashed: StateFlow<List<MediaItem>> = _trashed
+
+    // ---- clean up ----------------------------------------------------------------------------
+    private val _cleanup = MutableStateFlow(sleepless_index.haze.data.CleanupResult())
+    val cleanup: StateFlow<sleepless_index.haze.data.CleanupResult> = _cleanup
+    private val _cleanupProgress = MutableStateFlow<Float?>(null)
+    val cleanupProgress: StateFlow<Float?> = _cleanupProgress
+    private val _cleanupFreed = MutableStateFlow<CleanupFreed?>(null)
+    val cleanupFreed: StateFlow<CleanupFreed?> = _cleanupFreed
+    private var lastCleanupScan = 0L
+
+    /** Looks for duplicates and clutter in the background. Cheap to call repeatedly. */
+    fun scanCleanup(force: Boolean = false) {
+        if (_cleanupProgress.value != null) return
+        val fresh = _cleanup.value.scanned && System.currentTimeMillis() - lastCleanupScan < 10 * 60 * 1000L
+        if (fresh && !force) return
+        _cleanupProgress.value = 0f
+        viewModelScope.launch {
+            val result = runCatching {
+                sleepless_index.haze.data.Cleanup.scan(getApplication<Application>(), items.value) { _cleanupProgress.value = it }
+            }.getOrNull()
+            if (result != null) {
+                _cleanup.value = result
+                lastCleanupScan = System.currentTimeMillis()
+            }
+            _cleanupProgress.value = null
+        }
+    }
+
+    fun addCleanupFreed(ids: List<Long>, bytes: Long) {
+        val cur = _cleanupFreed.value
+        _cleanupFreed.value = CleanupFreed((cur?.ids ?: emptyList()) + ids, (cur?.bytes ?: 0L) + bytes)
+    }
+
+    fun clearCleanupFreed() { _cleanupFreed.value = null }
+
+    /** Puts back everything the clean-up just moved to Trash. */
+    fun undoCleanup() {
+        val freed = _cleanupFreed.value ?: return
+        requestRestore(_trashed.value.filter { it.id in freed.ids })
+        _cleanupFreed.value = null
+    }
 
     fun refresh() {
         viewModelScope.launch {

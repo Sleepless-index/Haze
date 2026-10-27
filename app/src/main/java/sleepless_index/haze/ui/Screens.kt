@@ -294,20 +294,11 @@ fun CollectionScreen(
             }
         }
         if (confirmDeleteAll) {
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { confirmDeleteAll = false },
-                title = { androidx.compose.material3.Text("Delete all?") },
-                text = { androidx.compose.material3.Text("${items.size} items will be permanently deleted. This can't be undone.") },
-                confirmButton = {
-                    androidx.compose.material3.TextButton(onClick = { confirmDeleteAll = false; vm.emptyTrash() }) {
-                        androidx.compose.material3.Text("Delete", color = androidx.compose.material3.MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    androidx.compose.material3.TextButton(onClick = { confirmDeleteAll = false }) {
-                        androidx.compose.material3.Text("Cancel")
-                    }
-                },
+            DeleteForeverConfirm(
+                items = items,
+                everything = true,
+                onConfirm = { confirmDeleteAll = false; vm.emptyTrash() },
+                onDismiss = { confirmDeleteAll = false },
             )
         }
         SelectionBarHost(selectMode, vm, items, trash = trash, modifier = Modifier.align(Alignment.BottomCenter), vault = vault)

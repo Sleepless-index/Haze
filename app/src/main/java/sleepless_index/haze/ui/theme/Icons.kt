@@ -135,6 +135,9 @@ object GIcons {
     val Folder: ImageVector by lazy {
         IconBuilder("Folder").s("M 3.5 7.5 a 2 2 0 0 1 2 -2 H 10 l 2 2.5 h 6.5 a 2 2 0 0 1 2 2 V 17 a 2 2 0 0 1 -2 2 h -13 a 2 2 0 0 1 -2 -2 z").build()
     }
+    val Sparkle: ImageVector by lazy {
+        IconBuilder("Sparkle").s("M 12 3 l 1.8 5.2 L 19 10 l -5.2 1.8 L 12 17 l -1.8 -5.2 L 5 10 l 5.2 -1.8 z M 18 16 l 0.8 2.2 L 21 19 l -2.2 0.8 L 18 22 l -0.8 -2.2 L 15 19 l 2.2 -0.8 z").build()
+    }
     val Undo: ImageVector by lazy { IconBuilder("Undo").s("M 9 14 L 4 9 l 5 -5 M 4 9 h 10.5 a 5.5 5.5 0 0 1 0 11 H 11").build() }
     val Redo: ImageVector by lazy { IconBuilder("Redo").s("M 15 14 l 5 -5 l -5 -5 M 20 9 H 9.5 a 5.5 5.5 0 0 0 0 11 H 13").build() }
     val Plus: ImageVector by lazy { IconBuilder("Plus").s("M 12 5 v 14 M 5 12 h 14").build() }

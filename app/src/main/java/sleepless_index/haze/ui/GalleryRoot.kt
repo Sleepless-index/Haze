@@ -118,6 +118,7 @@ fun GalleryRoot(
                     onOpenSmart = { kind -> nav.navigate("smart/$kind") },
                     onOpenSettings = { nav.navigate("settings") },
                     onOpenVault = { nav.navigate("vault") },
+                    onOpenCleanup = { nav.navigate("cleanup") },
                 )
             }
             composable("search") { SearchScreen(vm, onOpen = openViewer) }
@@ -142,6 +143,31 @@ fun GalleryRoot(
                 )
             }
 
+            composable(
+                route = "cleanup",
+                enterTransition = { slideInHorizontally(tween(300)) { it / 5 } + fadeIn(tween(300)) },
+                popExitTransition = { slideOutHorizontally(tween(260)) { it / 5 } + fadeOut(tween(220)) },
+            ) {
+                CleanupScreen(
+                    vm = vm,
+                    onBack = { nav.popBackStack() },
+                    onOpen = { kind -> nav.navigate("cleanup/$kind") },
+                    onOpenTrash = { nav.navigate("smart/trash") },
+                )
+            }
+            composable(
+                route = "cleanup/{kind}",
+                arguments = listOf(navArgument("kind") { type = NavType.StringType }),
+                enterTransition = { slideInHorizontally(tween(300)) { it / 5 } + fadeIn(tween(300)) },
+                popExitTransition = { slideOutHorizontally(tween(260)) { it / 5 } + fadeOut(tween(220)) },
+            ) { entry ->
+                CleanupReviewScreen(
+                    vm = vm,
+                    kind = entry.arguments?.getString("kind") ?: "duplicates",
+                    onBack = { nav.popBackStack() },
+                    onOpen = openViewer,
+                )
+            }
             composable(
                 route = "vault",
                 enterTransition = { slideInHorizontally(tween(300)) { it / 5 } + fadeIn(tween(300)) },

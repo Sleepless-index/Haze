@@ -11,6 +11,8 @@ A fast, local-only gallery for Android. AMOLED-minimal, no network, no tracking.
 - Grid or masonry timeline, fast scroller, search by name, album or month
 - Albums with pin, rename, hide and delete; Favorites and Videos albums; Trash with days-left badges and delete-all
 - Viewer with zoom, swipeable thumbnail strip, info sheet, Lens search, wallpaper / contact photo, blurred ambient background
+- Clean up: find duplicates, similar photos, old screenshots and large videos, review them, and move them to Trash
+- Every delete, move to album and move to Vault asks first in a bottom sheet
 - Vault with its own lock (PIN, pattern or password)
 - Photo editor: crop, rotate, straighten, adjustments, filters, undo / redo (saves a copy)
 - Video editor: trim, crop, rotate, adjustments, filters, mute, undo / redo (exports a copy)

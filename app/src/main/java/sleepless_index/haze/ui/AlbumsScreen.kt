@@ -217,6 +217,7 @@ fun AlbumsScreen(
     onOpenSmart: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenVault: () -> Unit,
+    onOpenCleanup: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
     val albums by vm.albums.collectAsStateWithLifecycle()
@@ -224,6 +225,7 @@ fun AlbumsScreen(
     val allItems by vm.items.collectAsStateWithLifecycle()
     val videos by vm.videos.collectAsStateWithLifecycle()
     val trashed by vm.trashed.collectAsStateWithLifecycle()
+    val cleanup by vm.cleanup.collectAsStateWithLifecycle()
     val sizes = remember(allItems) {
         val m = HashMap<Long, Long>()
         for (it in allItems) m[it.bucketId] = (m[it.bucketId] ?: 0L) + it.sizeBytes
@@ -296,6 +298,15 @@ fun AlbumsScreen(
             item(key = "smart_vault") {
                 StaggerIn(3) {
                     SmartTile(GIcons.Lock, "Vault", "", cs.onBackground, onOpenVault)
+                }
+            }
+            item(key = "smart_cleanup", span = { GridItemSpan(maxLineSpan) }) {
+                StaggerIn(3) {
+                    SmartTile(
+                        GIcons.Sparkle, "Clean up",
+                        if (cleanup.scanned && cleanup.freeableBytes > 0) "${sleepless_index.haze.data.formatSize(cleanup.freeableBytes)} to free" else "",
+                        cs.onBackground, onOpenCleanup,
+                    )
                 }
             }
             item(key = "label_all", span = { GridItemSpan(maxLineSpan) }) {

@@ -68,6 +68,7 @@ fun AlbumPickerSheet(
     val all by vm.items.collectAsStateWithLifecycle()
     val roots = remember { MediaOps.storageRoots(context) }
     var creating by remember { mutableStateOf(false) }
+    var confirmAlbum by remember { mutableStateOf<Album?>(null) }
 
     val sizes = remember(all) {
         val m = HashMap<Long, Long>()
@@ -160,13 +161,26 @@ fun AlbumPickerSheet(
                         bytes = sizes[album.bucketId] ?: 0L,
                         sd = album.bucketId in onSd,
                         onClick = {
-                            vm.transferToAlbum(items, album, move)
-                            onDismiss()
+                            if (move) {
+                                confirmAlbum = album
+                            } else {
+                                vm.transferToAlbum(items, album, false)
+                                onDismiss()
+                            }
                         },
                     )
                 }
             }
         }
+    }
+
+    confirmAlbum?.let { a ->
+        MoveConfirm(
+            items = items,
+            albumName = a.name,
+            onConfirm = { confirmAlbum = null; vm.transferToAlbum(items, a, true); onDismiss() },
+            onDismiss = { confirmAlbum = null },
+        )
     }
 
     if (creating) {

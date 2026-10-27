@@ -499,6 +499,7 @@ fun SelectionBar(
     val has = selected.isNotEmpty()
     var picker by remember { mutableStateOf(0) }
     var confirmForever by remember { mutableStateOf(false) }
+    var confirmTrash by remember { mutableStateOf(false) }
 
     PillBar(modifier) {
         if (!trash) {
@@ -527,7 +528,7 @@ fun SelectionBar(
             )
             PillItem(
                 icon = GIcons.Trash, label = "Delete", selected = false,
-                onClick = { if (has) vm.requestTrash(source.filter { it.id in selected }) },
+                onClick = { if (has) confirmTrash = true },
                 modifier = Modifier.weight(1f),
             )
         } else {
@@ -543,20 +544,22 @@ fun SelectionBar(
             )
         }
     }
+    if (confirmTrash) {
+        val chosen = source.filter { it.id in selected }
+        TrashConfirm(
+            items = chosen,
+            trashDays = vm.prefs.value.trashDays,
+            onConfirm = { confirmTrash = false; vm.requestTrash(chosen) },
+            onDismiss = { confirmTrash = false },
+        )
+    }
     if (confirmForever) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { confirmForever = false },
-            title = { Text("Delete forever?") },
-            text = { Text("${selected.size} selected items will be permanently deleted. This can't be undone.") },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    confirmForever = false
-                    vm.requestDeleteForever(source.filter { it.id in selected })
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { confirmForever = false }) { Text("Cancel") }
-            },
+        val chosen = source.filter { it.id in selected }
+        DeleteForeverConfirm(
+            items = chosen,
+            everything = false,
+            onConfirm = { confirmForever = false; vm.requestDeleteForever(chosen) },
+            onDismiss = { confirmForever = false },
         )
     }
     if (picker != 0) {

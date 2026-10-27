@@ -134,6 +134,8 @@ fun ViewerScreen(
     val pagerState = rememberPagerState(initialPage = startIndex.coerceIn(0, list.lastIndex)) { list.size }
     var chrome by remember { mutableStateOf(true) }
     var showInfo by remember { mutableStateOf(false) }
+    var confirmTrash by remember { mutableStateOf(false) }
+    var confirmVault by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
     // null = closed, false = copy to album, true = move to album
     var picker by remember { mutableStateOf<Boolean?>(null) }
@@ -276,7 +278,7 @@ fun ViewerScreen(
                                 text = { Text("Move to Vault") },
                                 onClick = {
                                     menu = false
-                                    vm.moveToVault(listOf(current))
+                                    confirmVault = true
                                 },
                             )
                         }
@@ -341,7 +343,7 @@ fun ViewerScreen(
                     )
                     PillItem(
                         icon = GIcons.Trash, label = "Delete", selected = false,
-                        onClick = { vm.requestTrash(listOf(current)) },
+                        onClick = { confirmTrash = true },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -352,6 +354,21 @@ fun ViewerScreen(
     if (showInfo) {
         InfoSheet(item = current, translucent = blurOn, onDismiss = { showInfo = false }, onRename = { vm.rename(current, it) },
             onEditDate = { vm.editMeta(current, it, false) }, onRemoveLocation = { vm.editMeta(current, null, true) })
+    }
+    if (confirmTrash) {
+        TrashConfirm(
+            items = listOf(current),
+            trashDays = vm.prefs.value.trashDays,
+            onConfirm = { confirmTrash = false; vm.requestTrash(listOf(current)) },
+            onDismiss = { confirmTrash = false },
+        )
+    }
+    if (confirmVault) {
+        VaultConfirm(
+            items = listOf(current),
+            onConfirm = { confirmVault = false; vm.moveToVault(listOf(current)) },
+            onDismiss = { confirmVault = false },
+        )
     }
     picker?.let { move ->
         AlbumPickerSheet(vm = vm, items = listOf(current), move = move, onDismiss = { picker = null })
