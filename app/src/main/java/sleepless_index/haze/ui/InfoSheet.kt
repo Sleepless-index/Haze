@@ -3,9 +3,15 @@ package sleepless_index.haze.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.media.MediaExtractor
+import android.media.MediaFormat
+import android.media.MediaMetadataRetriever
+import android.os.Build
 import android.provider.MediaStore
 import android.text.format.DateUtils
 import android.widget.Toast
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -64,6 +72,8 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.min
 
+private data class TechRow(val label: String, val value: String, val editable: Boolean = false)
+
 private data class Info(
     val path: String,
     val folderName: String,
@@ -78,6 +88,7 @@ private data class Info(
     val make: String? = null,
     val specs: List<String> = emptyList(),
     val latLong: DoubleArray? = null,
+    val tech: List<TechRow> = emptyList(),
 )
 
 fun copyToClipboard(context: Context, item: MediaItem) {
@@ -149,6 +160,7 @@ fun InfoSheet(
     val cardBg = if (translucent) cs.surfaceVariant.copy(alpha = 0.6f) else cs.surfaceVariant
     var renaming by remember { mutableStateOf(false) }
     var removingLocation by remember { mutableStateOf(false) }
+    var techOpen by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -172,6 +184,12 @@ fun InfoSheet(
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(dayText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.ExtraBold, color = cs.onBackground)
                     Text("$timeText  ·  $relText", fontSize = 14.sp, color = cs.onSurfaceVariant)
+                    if (info.camera != null || info.specs.isNotEmpty()) {
+                        Text(
+                            (listOfNotNull(info.camera) + info.specs).joinToString("  ·  "),
+                            fontSize = 13.sp, color = cs.onSurfaceVariant, maxLines = 2,
+                        )
+                    }
                 }
                 if (item.id >= 0) {
                     Row(
@@ -298,6 +316,72 @@ fun InfoSheet(
                     ) { Icon(GIcons.Copy, "Copy path", tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp)) }
                 }
             }
+
+            // Technical details: folded away until asked for
+            if (info.tech.isNotEmpty()) {
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cardBg).animateContentSize()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bounceClick(onClick = { techOpen = !techOpen })
+                            .padding(horizontal = 14.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Icon(GIcons.Info, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                        Text("Technical details", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
+                        if (techOpen) {
+                            Text(
+                                "Copy all", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(cs.surface)
+                                    .bounceClick(onClick = {
+                                        val text = buildString {
+                                            appendLine("Name: ${item.name}")
+                                            appendLine("Path: ${info.path}")
+                                            appendLine("Size: ${info.sizeTop} (${item.sizeBytes} bytes)")
+                                            info.tech.forEach { appendLine("${it.label}: ${it.value}") }
+                                        }.trim()
+                                        copyText(context, text, "Technical details copied")
+                                    })
+                                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                            )
+                        }
+                        Icon(GIcons.ChevronDown, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp).rotate(if (techOpen) 180f else 0f))
+                    }
+                    if (techOpen) {
+                        Text(
+                            "Tap a value to copy it. Rows marked Editable can be changed from this sheet; the rest are read-only.",
+                            fontSize = 12.5.sp, lineHeight = 18.sp, color = cs.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 6.dp),
+                        )
+                        for (row in info.tech) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .bounceClick(onClick = { copyText(context, row.value, "${row.label} copied") })
+                                    .padding(horizontal = 14.dp, vertical = 9.dp),
+                                verticalAlignment = Alignment.Top,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Text(row.label, fontSize = 12.5.sp, color = cs.onSurfaceVariant, modifier = Modifier.width(104.dp))
+                                Text(row.value, fontSize = 13.sp, color = cs.onBackground, modifier = Modifier.weight(1f))
+                                if (row.editable) {
+                                    Text(
+                                        "Editable", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = cs.primary,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(cs.primary.copy(alpha = 0.16f))
+                                            .padding(horizontal = 7.dp, vertical = 3.dp),
+                                    )
+                                }
+                            }
+                        }
+                        Box(Modifier.height(8.dp))
+                    }
+                }
+            }
         }
     }
 
@@ -416,7 +500,11 @@ private suspend fun readInfo(context: Context, item: MediaItem): Info =
                 info = info.copy(path = folder, folderName = folder.substringAfterLast('/').ifBlank { info.folderName })
             }
 
+            if (item.isVideo) {
+                info = info.copy(tech = videoTech(context, item))
+            }
             if (!item.isVideo) {
+                info = info.copy(tech = listOf(TechRow("Format", item.mime.ifBlank { "Unknown" })))
                 // With All files access the original file (GPS and all) can be read straight from disk.
                 val exif = (if (path != null && MediaOps.hasAllFiles()) runCatching { ExifInterface(path) }.getOrNull() else null)
                     ?: runCatching { openExif(context, MediaStore.setRequireOriginal(item.uri)) }.getOrNull()
@@ -444,6 +532,7 @@ private suspend fun readInfo(context: Context, item: MediaItem): Info =
                     val focal = exif.getAttributeDouble(ExifInterface.TAG_FOCAL_LENGTH, 0.0)
                     if (focal > 0) specs += "${trimNumber(focal)}mm"
                     info = info.copy(
+                        tech = photoTech(context, item, exif),
                         camera = (shownModel.ifEmpty { make }).ifEmpty { null },
                         make = if (shownModel.isNotEmpty() && make.isNotEmpty()) make else null,
                         specs = specs,
@@ -457,3 +546,123 @@ private suspend fun readInfo(context: Context, item: MediaItem): Info =
 
 private fun trimNumber(v: Double): String =
     if (v == v.toLong().toDouble()) v.toLong().toString() else "%.1f".format(v)
+
+private fun copyText(context: Context, text: String, toast: String) {
+    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    cm.setPrimaryClip(ClipData.newPlainText("Haze", text))
+    Toast.makeText(context, toast, Toast.LENGTH_SHORT).show()
+}
+
+private fun photoTech(context: Context, item: MediaItem, exif: ExifInterface): List<TechRow> {
+    val rows = mutableListOf<TechRow>()
+    fun add(label: String, value: String?, editable: Boolean = false) {
+        if (!value.isNullOrBlank()) rows += TechRow(label, value.trim(), editable)
+    }
+    add("Format", item.mime.ifBlank { "Unknown" })
+    add("Date taken", exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL), editable = true)
+    add("Camera", listOfNotNull(exif.getAttribute(ExifInterface.TAG_MAKE), exif.getAttribute(ExifInterface.TAG_MODEL)).joinToString(" "))
+    add("Lens", exif.getAttribute(ExifInterface.TAG_LENS_MODEL))
+    add("Software", exif.getAttribute(ExifInterface.TAG_SOFTWARE))
+    exif.getAttribute(ExifInterface.TAG_EXPOSURE_BIAS_VALUE)?.toDoubleOrNull()?.let { add("Exposure bias", "%+.1f EV".format(it)) }
+    exif.getAttributeInt(ExifInterface.TAG_FOCAL_LENGTH_IN_35MM_FILM, 0).takeIf { it > 0 }?.let { add("35 mm equivalent", "$it mm") }
+    exif.getAttributeInt(ExifInterface.TAG_FLASH, -1).takeIf { it >= 0 }?.let { add("Flash", if (it and 1 == 1) "Fired" else "Did not fire") }
+    exif.getAttributeInt(ExifInterface.TAG_WHITE_BALANCE, -1).takeIf { it >= 0 }?.let { add("White balance", if (it == 0) "Auto" else "Manual") }
+    val space = runCatching {
+        context.contentResolver.openInputStream(item.uri)?.use { input ->
+            val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeStream(input, null, o)
+            o.outColorSpace?.name
+        }
+    }.getOrNull()
+    add("Color space", space)
+    val xmp = runCatching { exif.getAttribute(ExifInterface.TAG_XMP) }.getOrNull()
+    if (xmp != null && xmp.contains("hdrgm", ignoreCase = true)) add("HDR", "Ultra HDR (gain map)")
+    exif.latLong?.let { add("GPS position", "%.5f, %.5f".format(it[0], it[1]), editable = true) }
+    return rows
+}
+
+private fun codecName(mime: String): String = when (mime.lowercase()) {
+    "video/avc" -> "H.264 (AVC)"
+    "video/hevc" -> "H.265 (HEVC)"
+    "video/av01" -> "AV1"
+    "video/x-vnd.on2.vp9" -> "VP9"
+    "video/x-vnd.on2.vp8" -> "VP8"
+    "video/mp4v-es" -> "MPEG-4"
+    "video/3gpp" -> "H.263"
+    "video/dolby-vision" -> "Dolby Vision"
+    "audio/mp4a-latm" -> "AAC"
+    "audio/opus" -> "Opus"
+    "audio/vorbis" -> "Vorbis"
+    "audio/ac3" -> "AC-3"
+    "audio/eac3" -> "E-AC-3"
+    "audio/mpeg" -> "MP3"
+    "audio/flac" -> "FLAC"
+    "audio/raw" -> "PCM"
+    "audio/3gpp" -> "AMR-NB"
+    "audio/amr-wb" -> "AMR-WB"
+    else -> mime.substringAfter('/').uppercase()
+}
+
+private fun videoTech(context: Context, item: MediaItem): List<TechRow> {
+    val rows = mutableListOf<TechRow>()
+    rows += TechRow("Container", item.mime.ifBlank { "Unknown" })
+
+    // Codecs come from the file's tracks.
+    val video = mutableListOf<TechRow>()
+    val audio = mutableListOf<TechRow>()
+    val extractor = MediaExtractor()
+    try {
+        extractor.setDataSource(context, item.uri, null)
+        for (i in 0 until extractor.trackCount) {
+            val f = extractor.getTrackFormat(i)
+            val mime = f.getString(MediaFormat.KEY_MIME) ?: continue
+            if (mime.startsWith("video/")) {
+                video += TechRow("Video codec", codecName(mime))
+            } else if (mime.startsWith("audio/")) {
+                audio += TechRow("Audio codec", codecName(mime))
+                val rate = if (f.containsKey(MediaFormat.KEY_SAMPLE_RATE)) f.getInteger(MediaFormat.KEY_SAMPLE_RATE) else 0
+                val ch = if (f.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) f.getInteger(MediaFormat.KEY_CHANNEL_COUNT) else 0
+                if (rate > 0 || ch > 0) {
+                    audio += TechRow("Audio", listOfNotNull(
+                        if (rate > 0) "%.1f kHz".format(rate / 1000.0) else null,
+                        if (ch > 0) "$ch ch" else null,
+                    ).joinToString("  ·  "))
+                }
+            }
+        }
+    } catch (e: Exception) {
+        // Some containers can't be probed; the rows that did load are still shown.
+    } finally {
+        extractor.release()
+    }
+    rows += video
+
+    val mmr = MediaMetadataRetriever()
+    try {
+        mmr.setDataSource(context, item.uri)
+        if (Build.VERSION.SDK_INT >= 28 && item.durationMs > 0) {
+            val frames = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_FRAME_COUNT)?.toLongOrNull() ?: 0L
+            if (frames > 0) rows += TechRow("Frame rate", "%.0f fps".format(frames * 1000.0 / item.durationMs))
+        }
+        mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toLongOrNull()?.takeIf { it > 0 }
+            ?.let { rows += TechRow("Bitrate", "%.1f Mbps".format(it / 1_000_000.0)) }
+        mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull()?.takeIf { it != 0 }
+            ?.let { rows += TechRow("Rotation", "$it°") }
+        if (Build.VERSION.SDK_INT >= 30) {
+            when (mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_COLOR_TRANSFER)?.toIntOrNull()) {
+                6 -> rows += TechRow("HDR", "HDR10 (PQ)")
+                7 -> rows += TechRow("HDR", "HLG")
+            }
+            when (mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_COLOR_STANDARD)?.toIntOrNull()) {
+                1 -> rows += TechRow("Color standard", "BT.709")
+                6 -> rows += TechRow("Color standard", "BT.2020")
+            }
+        }
+    } catch (e: Exception) {
+        // Same here: show whatever could be read.
+    } finally {
+        mmr.release()
+    }
+    rows += audio
+    return rows
+}

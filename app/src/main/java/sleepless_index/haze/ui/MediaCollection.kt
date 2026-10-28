@@ -10,6 +10,8 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.clickable
 import sleepless_index.haze.data.thumbRequest
+import coil.imageLoader
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.draw.drawBehind
@@ -314,6 +316,45 @@ fun MediaCollection(
     val screenWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
     val gridThumb = (screenWidthPx / columns * 1.15f).toInt().coerceIn(160, 640)
     val masonryThumb = (screenWidthPx * 0.62f).toInt().coerceIn(320, 800)
+
+    sleepless_index.haze.util.PerfLog.once("grid", "First photos on screen ${sleepless_index.haze.util.PerfLog.sinceLaunchMs()} ms after launch")
+    sleepless_index.haze.util.ScrollJankMonitor(
+        scrolling = if (layout == LayoutMode.GRID) gridState.isScrollInProgress else staggeredState.isScrollInProgress,
+        label = if (layout == LayoutMode.GRID) "grid" else "masonry",
+    )
+
+    // Warm the cache for the next couple of screens so tiles are already decoded when they scroll in.
+    val appContext = LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(gridState, entries, gridThumb, layout) {
+        if (layout != LayoutMode.GRID) return@LaunchedEffect
+        val loader = appContext.imageLoader
+        var queued = emptyList<coil.request.Disposable>()
+        androidx.compose.runtime.snapshotFlow { gridState.firstVisibleItemIndex to gridState.layoutInfo.visibleItemsInfo.size }
+            .distinctUntilChanged()
+            .collect { (first, visible) ->
+                queued.forEach { it.dispose() }
+                val from = first + visible
+                val to = (from + visible * 2).coerceAtMost(entries.size)
+                queued = (from until to).mapNotNull { i ->
+                    (entries[i] as? Entry.Media)?.let { loader.enqueue(thumbRequest(appContext, it.item.uri, gridThumb, it.item.isVideo)) }
+                }
+            }
+    }
+    androidx.compose.runtime.LaunchedEffect(staggeredState, masonryEntries, masonryThumb, layout) {
+        if (layout != LayoutMode.MASONRY) return@LaunchedEffect
+        val loader = appContext.imageLoader
+        var queued = emptyList<coil.request.Disposable>()
+        androidx.compose.runtime.snapshotFlow { staggeredState.firstVisibleItemIndex to staggeredState.layoutInfo.visibleItemsInfo.size }
+            .distinctUntilChanged()
+            .collect { (first, visible) ->
+                queued.forEach { it.dispose() }
+                val from = first + visible
+                val to = (from + visible * 2).coerceAtMost(masonryEntries.size)
+                queued = (from until to).mapNotNull { i ->
+                    masonryEntries[i].let { loader.enqueue(thumbRequest(appContext, it.item.uri, masonryThumb, it.item.isVideo)) }
+                }
+            }
+    }
 
     fun idAt(pos: Offset): Long? {
         val x = pos.x.toInt()

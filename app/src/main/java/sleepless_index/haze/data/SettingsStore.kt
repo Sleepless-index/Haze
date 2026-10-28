@@ -35,6 +35,7 @@ data class Prefs(
     val hidden: Set<Long> = emptySet(),
     val vaultLock: String = "",
     val stripLocation: Boolean = true,
+    val recentSearches: List<String> = emptyList(),
 ) {
     companion object {
         const val ACCENT_LIME = 0xFFD4FF3A.toInt()
@@ -65,6 +66,7 @@ class SettingsStore(private val context: Context) {
     private val kHidden = stringSetPreferencesKey("hiddenAlbums")
     private val kVaultLock = stringPreferencesKey("vaultLock")
     private val kStripLocation = booleanPreferencesKey("stripLocation")
+    private val kRecentSearches = stringPreferencesKey("recentSearches")
 
     val flow: Flow<Prefs> = context.dataStore.data.map { p ->
         Prefs(
@@ -84,6 +86,7 @@ class SettingsStore(private val context: Context) {
             hidden = (p[kHidden] ?: emptySet()).mapNotNull { it.toLongOrNull() }.toSet(),
             vaultLock = p[kVaultLock] ?: "",
             stripLocation = p[kStripLocation] ?: true,
+            recentSearches = (p[kRecentSearches] ?: "").split('\u001F').filter { it.isNotBlank() },
         )
     }
 
@@ -101,6 +104,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setBgPlay(v: Boolean) { context.dataStore.edit { it[kBgPlay] = v } }
     suspend fun setTrashDays(v: Int) { context.dataStore.edit { it[kTrashDays] = v } }
 
+    suspend fun setRecentSearches(v: List<String>) { context.dataStore.edit { it[kRecentSearches] = v.joinToString("\u001F") } }
     suspend fun setStripLocation(v: Boolean) { context.dataStore.edit { it[kStripLocation] = v } }
     suspend fun setVaultLock(v: String) { context.dataStore.edit { it[kVaultLock] = v } }
 

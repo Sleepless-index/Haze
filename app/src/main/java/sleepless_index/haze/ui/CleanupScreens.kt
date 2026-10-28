@@ -333,13 +333,19 @@ fun CleanupReviewScreen(
     val group = groups.getOrNull(safeIndex)
     // Taps flip the suggested choice: the suggestion itself isn't stored.
     val flipped = remember { mutableStateMapOf<Long, Boolean>() }
+    var acrossAll by rememberSaveable { mutableStateOf(false) }
     var confirm by remember { mutableStateOf(false) }
     var pending by remember { mutableStateOf<List<MediaItem>?>(null) }
 
     fun isSelected(m: MediaItem, g: CleanupGroup): Boolean =
         (grouped && m.id != g.keepId) != (flipped[m.id] == true)
 
-    val chosen = if (group == null) emptyList() else group.items.filter { isSelected(it, group) }
+    val across = acrossAll && grouped && groups.size > 1
+    val chosen = when {
+        group == null -> emptyList()
+        across -> groups.flatMap { g -> g.items.filter { isSelected(it, g) } }
+        else -> group.items.filter { isSelected(it, group) }
+    }
 
     // Once the system confirms the removal (the files leave the library), count it as freed.
     LaunchedEffect(present) {
@@ -452,16 +458,26 @@ fun CleanupReviewScreen(
                             ) {
                                 if (sel) Icon(GIcons.Check, "Selected to remove", tint = cs.onError, modifier = Modifier.size(16.dp))
                             }
-                            Text(
-                                if (m.isVideo) "${formatDuration(m.durationMs)} · ${formatSize(m.sizeBytes)}" else formatSize(m.sizeBytes),
-                                fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                            Column(
                                 modifier = Modifier
                                     .align(Alignment.BottomStart)
                                     .padding(10.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color.Black.copy(alpha = 0.6f))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                            )
+                                    .background(Color.Black.copy(alpha = 0.62f))
+                                    .padding(horizontal = 8.dp, vertical = 5.dp),
+                            ) {
+                                val dims = if (m.width > 0 && m.height > 0) "${m.width}×${m.height}" else ""
+                                val first = listOfNotNull(
+                                    formatSize(m.sizeBytes),
+                                    if (m.isVideo) formatDuration(m.durationMs) else dims.ifBlank { null },
+                                ).joinToString(" · ")
+                                Text(first, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
+                                Text(
+                                    DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a", Locale.getDefault())
+                                        .format(Instant.ofEpochMilli(m.dateMs).atZone(ZoneId.systemDefault())),
+                                    fontSize = 10.5.sp, color = Color.White.copy(alpha = 0.8f), maxLines = 1,
+                                )
+                            }
                         }
                     }
                 }
@@ -478,14 +494,31 @@ fun CleanupReviewScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (grouped) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(44.dp)
-                            .clip(RoundedCornerShape(22.dp))
-                            .bounceClick(onClick = { if (safeIndex < groups.size - 1) index = safeIndex + 1 else onBack() }),
-                        contentAlignment = Alignment.Center,
-                    ) { Text("Keep all and skip", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant) }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .height(44.dp)
+                                .clip(RoundedCornerShape(22.dp))
+                                .bounceClick(onClick = { if (safeIndex < groups.size - 1) index = safeIndex + 1 else onBack() }),
+                            contentAlignment = Alignment.Center,
+                        ) { Text("Keep all and skip", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant) }
+                        if (groups.size > 1) {
+                            Box(
+                                Modifier
+                                    .weight(1f)
+                                    .height(44.dp)
+                                    .clip(RoundedCornerShape(22.dp))
+                                    .bounceClick(onClick = { acrossAll = !acrossAll }),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    if (across) "Only this group" else "Select all recommended",
+                                    fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.primary,
+                                )
+                            }
+                        }
+                    }
                 }
                 val can = chosen.isNotEmpty()
                 Box(
@@ -498,7 +531,11 @@ fun CleanupReviewScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        if (can) "Remove ${chosen.size} · frees ${formatSize(chosen.sumOf { it.sizeBytes })}" else "Select what to remove",
+                        when {
+                            !can -> "Select what to remove"
+                            across -> "Remove ${chosen.size} from ${groups.size} groups · frees ${formatSize(chosen.sumOf { it.sizeBytes })}"
+                            else -> "Remove ${chosen.size} · frees ${formatSize(chosen.sumOf { it.sizeBytes })}"
+                        },
                         fontSize = 15.sp, fontWeight = FontWeight.Bold,
                         color = if (can) cs.onPrimary else cs.onSurfaceVariant,
                     )
