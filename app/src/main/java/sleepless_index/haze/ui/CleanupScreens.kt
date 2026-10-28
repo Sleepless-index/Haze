@@ -1,5 +1,6 @@
 package sleepless_index.haze.ui
 
+import androidx.compose.animation.togetherWith
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -489,8 +490,8 @@ fun CleanupReviewScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .background(Brush.verticalGradient(listOf(Color.Transparent, cs.background, cs.background)))
-                    .padding(start = 16.dp, end = 16.dp, top = 28.dp, bottom = 12.dp + navBottom),
+                    .background(cs.background)
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp + navBottom),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (grouped) {
@@ -500,22 +501,41 @@ fun CleanupReviewScreen(
                                 .weight(1f)
                                 .height(44.dp)
                                 .clip(RoundedCornerShape(22.dp))
+                                .background(cs.surface)
                                 .bounceClick(onClick = { if (safeIndex < groups.size - 1) index = safeIndex + 1 else onBack() }),
                             contentAlignment = Alignment.Center,
-                        ) { Text("Keep all and skip", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant) }
+                        ) {
+                            Text(
+                                "Keep all and skip",
+                                fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant,
+                                maxLines = 1, softWrap = false,
+                            )
+                        }
                         if (groups.size > 1) {
                             Box(
                                 Modifier
                                     .weight(1f)
                                     .height(44.dp)
                                     .clip(RoundedCornerShape(22.dp))
+                                    .background(cs.primary.copy(alpha = if (across) 0.28f else 0.16f))
                                     .bounceClick(onClick = { acrossAll = !acrossAll }),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text(
-                                    if (across) "Only this group" else "Select all recommended",
-                                    fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.primary,
-                                )
+                                androidx.compose.animation.AnimatedContent(
+                                    targetState = across,
+                                    transitionSpec = {
+                                        (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(180)) +
+                                            androidx.compose.animation.scaleIn(initialScale = 0.9f)) togetherWith
+                                            androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120))
+                                    },
+                                    label = "selectAll",
+                                ) { on ->
+                                    Text(
+                                        if (on) "Only this group" else "Select all recommended",
+                                        fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = cs.primary,
+                                        maxLines = 1, softWrap = false,
+                                    )
+                                }
                             }
                         }
                     }

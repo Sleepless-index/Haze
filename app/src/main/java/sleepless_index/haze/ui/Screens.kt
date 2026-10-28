@@ -63,7 +63,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import sleepless_index.haze.data.Entry
 import sleepless_index.haze.data.LayoutMode
 import sleepless_index.haze.data.MediaItem
-import sleepless_index.haze.data.MediaKind
 import sleepless_index.haze.data.buildEntries
 import sleepless_index.haze.data.monthLabel
 import sleepless_index.haze.ui.theme.GIcons
@@ -315,27 +314,29 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit) {
     val items by vm.items.collectAsStateWithLifecycle()
     val prefs by vm.prefs.collectAsStateWithLifecycle()
     val favs by vm.favorites.collectAsStateWithLifecycle()
-    val albums by vm.albums.collectAsStateWithLifecycle()
-    val filter by vm.searchFilter.collectAsStateWithLifecycle()
     val selected by vm.selected.collectAsStateWithLifecycle()
     val selectMode by vm.selectMode.collectAsStateWithLifecycle()
     val cs = MaterialTheme.colorScheme
 
     var query by rememberSaveable { mutableStateOf("") }
+    var filter by rememberSaveable { mutableIntStateOf(0) }
     var focused by remember { mutableStateOf(false) }
-    var showFilters by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
-    val idle = query.isBlank() && !filter.isActive
 
     val results by produceState(emptyList<MediaItem>(), items, query, filter, favs) {
         val q = query.trim().lowercase(Locale.getDefault())
-        value = if (q.isEmpty() && !filter.isActive) {
+        value = if (q.isEmpty() && filter == 0) {
             emptyList()
         } else {
-            val matches = filter.matcher(favs)
             withContext(Dispatchers.Default) {
                 items.filter { m ->
-                    matches(m) && (q.isEmpty() ||
+                    val typeOk = when (filter) {
+                        1 -> !m.isVideo
+                        2 -> m.isVideo
+                        3 -> m.id in favs
+                        else -> true
+                    }
+                    typeOk && (q.isEmpty() ||
                         m.name.lowercase(Locale.getDefault()).contains(q) ||
                         m.bucketName.lowercase(Locale.getDefault()).contains(q) ||
                         monthLabel(m.dateMs).lowercase(Locale.getDefault()).contains(q))
@@ -390,7 +391,7 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit) {
                         textStyle = TextStyle(color = cs.onBackground, fontSize = 15.sp, fontWeight = FontWeight.Medium),
                         cursorBrush = SolidColor(cs.primary),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { vm.addRecentSearch(query); focusManager.clearFocus() }),
+                        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                         modifier = Modifier
                             .fillMaxWidth()
                             .onFocusChanged { focused = it.isFocused },
@@ -410,144 +411,34 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit) {
                     .horizontalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
             ) {
-                FilterChipPill(
-                    label = if (filter.advancedCount > 0) "Filters · ${filter.advancedCount}" else "Filters",
-                    active = filter.advancedCount > 0,
-                    onClick = { focusManager.clearFocus(); showFilters = true },
-                )
-                val quick = listOf("All", "Photos", "Videos", "GIFs", "Screenshots", "Favorites")
-                val current = if (filter.favoritesOnly) 5 else when (filter.kind) {
-                    MediaKind.ALL -> 0
-                    MediaKind.PHOTO -> 1
-                    MediaKind.VIDEO -> 2
-                    MediaKind.GIF -> 3
-                    MediaKind.SCREENSHOT -> 4
-                }
-                quick.forEachIndexed { i, label ->
-                    FilterChipPill(label = label, active = current == i, onClick = {
-                        vm.setSearchFilter(
-                            filter.copy(
-                                favoritesOnly = i == 5,
-                                kind = when (i) {
-                                    1 -> MediaKind.PHOTO
-                                    2 -> MediaKind.VIDEO
-                                    3 -> MediaKind.GIF
-                                    4 -> MediaKind.SCREENSHOT
-                                    else -> MediaKind.ALL
-                                },
-                            ),
-                        )
-                    })
+                listOf("All", "Photos", "Videos", "Favorites").forEachIndexed { i, label ->
+                    FilterChipPill(label = label, active = filter == i, onClick = { filter = i })
                 }
             }
 
-            val active = activeFilterLabels(filter)
-            if (active.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    for ((label, without) in active) {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(cs.primary.copy(alpha = 0.18f))
-                                .bounceClick(onClick = { vm.setSearchFilter(without) })
-                                .padding(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Text(label, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
-                            Icon(GIcons.Close, "Remove filter", tint = cs.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                        }
-                    }
-                }
-            }
-
-            if (idle) {
-                val recents = prefs.recentSearches
-                Column(
-                    modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    if (recents.isEmpty()) {
-                        Text(
-                            "Search your library", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground,
-                            modifier = Modifier.padding(top = 24.dp, start = 4.dp),
-                        )
-                        Text(
-                            "Try a name, an album or a month. Filters narrow by date, size, resolution or video length.",
-                            fontSize = 13.sp, lineHeight = 19.sp, color = cs.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 4.dp, top = 4.dp),
-                        )
+            MediaCollection(
+                entries = entries,
+                layout = prefs.layout,
+                columns = prefs.columns,
+                selected = selected,
+                selectMode = selectMode,
+                favorites = favs,
+                onClick = { item ->
+                    if (selectMode) {
+                        vm.toggle(item.id)
                     } else {
-                        Row(Modifier.fillMaxWidth().padding(start = 4.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text("Recent", fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.7.sp, color = cs.onSurfaceVariant, modifier = Modifier.weight(1f))
-                            Text(
-                                "Clear", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant,
-                                modifier = Modifier.clip(RoundedCornerShape(14.dp)).bounceClick(onClick = { vm.clearRecentSearches() }).padding(horizontal = 10.dp, vertical = 6.dp),
-                            )
-                        }
-                        for (r in recents) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .bounceClick(onClick = { query = r })
-                                    .padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                Icon(GIcons.Search, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                                Text(r, fontSize = 15.sp, color = cs.onBackground, maxLines = 1, modifier = Modifier.weight(1f))
-                                GIconButton(
-                                    GIcons.Close, "Remove", onClick = { vm.removeRecentSearch(r) },
-                                    size = 36.dp, flat = true, tint = cs.onSurfaceVariant,
-                                )
-                            }
-                        }
+                        val idx = results.indexOfFirst { it.id == item.id }
+                        if (idx >= 0) onOpen(results, idx)
                     }
-                }
-            } else {
-                MediaCollection(
-                    entries = entries,
-                    layout = prefs.layout,
-                    columns = prefs.columns,
-                    selected = selected,
-                    selectMode = selectMode,
-                    favorites = favs,
-                    onClick = { item ->
-                        if (selectMode) {
-                            vm.toggle(item.id)
-                        } else {
-                            vm.addRecentSearch(query)
-                            val idx = results.indexOfFirst { it.id == item.id }
-                            if (idx >= 0) onOpen(results, idx)
-                        }
-                    },
-                    onSetSelected = { id, on -> vm.setSelected(id, on) },
-                    bottomPad = BottomBarSpace + navBottomInset(),
-                    modifier = Modifier.weight(1f),
-                    emptyText = "No matches",
-                )
-            }
+                },
+                onSetSelected = { id, on -> vm.setSelected(id, on) },
+                bottomPad = BottomBarSpace + navBottomInset(),
+                modifier = Modifier.weight(1f),
+                emptyText = if (query.isBlank() && filter == 0) "Search your library" else "No matches",
+            )
         }
         SelectionBarHost(selectMode, vm, results, trash = false, modifier = Modifier.align(Alignment.BottomCenter))
-    }
-
-    if (showFilters) {
-        SearchFilterSheet(
-            filter = filter,
-            albums = albums,
-            resultCount = results.size,
-            onChange = { vm.setSearchFilter(it) },
-            onDismiss = { showFilters = false },
-        )
     }
 }
 

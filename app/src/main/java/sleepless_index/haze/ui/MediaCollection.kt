@@ -317,12 +317,6 @@ fun MediaCollection(
     val gridThumb = (screenWidthPx / columns * 1.15f).toInt().coerceIn(160, 640)
     val masonryThumb = (screenWidthPx * 0.62f).toInt().coerceIn(320, 800)
 
-    sleepless_index.haze.util.PerfLog.once("grid", "First photos on screen ${sleepless_index.haze.util.PerfLog.sinceLaunchMs()} ms after launch")
-    sleepless_index.haze.util.ScrollJankMonitor(
-        scrolling = if (layout == LayoutMode.GRID) gridState.isScrollInProgress else staggeredState.isScrollInProgress,
-        label = if (layout == LayoutMode.GRID) "grid" else "masonry",
-    )
-
     // Warm the cache for the next couple of screens so tiles are already decoded when they scroll in.
     val appContext = LocalContext.current
     androidx.compose.runtime.LaunchedEffect(gridState, entries, gridThumb, layout) {

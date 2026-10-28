@@ -32,10 +32,7 @@ class MediaRepository(private val context: Context) {
     private var debounceJob: Job? = null
 
     suspend fun refresh() {
-        val startedAt = android.os.SystemClock.elapsedRealtime()
         val list = withContext(Dispatchers.IO) { query(trashed = false) }
-        sleepless_index.haze.util.PerfLog.add("Library query: %,d items in %d ms".format(list.size, android.os.SystemClock.elapsedRealtime() - startedAt))
-        sleepless_index.haze.util.PerfLog.once("library_ready", "Library ready ${sleepless_index.haze.util.PerfLog.sinceLaunchMs()} ms after launch")
         _items.value = list
         _loaded.value = true
     }

@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -104,6 +105,7 @@ private fun AlbumTile(
     cover: sleepless_index.haze.data.MediaItem,
     bytes: Long? = null,
     pinned: Boolean = false,
+    sd: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
@@ -129,10 +131,14 @@ private fun AlbumTile(
                     .clip(RoundedCornerShape(20.dp))
                     .background(cs.surfaceVariant),
             )
-            if (pinned) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = pinned,
+                modifier = Modifier.align(Alignment.TopEnd),
+                enter = androidx.compose.animation.scaleIn(androidx.compose.animation.core.spring(0.55f, 380f)) + androidx.compose.animation.fadeIn(),
+                exit = androidx.compose.animation.scaleOut() + androidx.compose.animation.fadeOut(),
+            ) {
                 Box(
                     Modifier
-                        .align(Alignment.TopEnd)
                         .padding(8.dp)
                         .size(26.dp)
                         .clip(RoundedCornerShape(13.dp))
@@ -140,6 +146,23 @@ private fun AlbumTile(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(GIcons.Pin, contentDescription = "Pinned", tint = Color.White, modifier = Modifier.size(14.dp))
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = sd,
+                modifier = Modifier.align(Alignment.BottomEnd),
+                enter = androidx.compose.animation.scaleIn(androidx.compose.animation.core.spring(0.55f, 380f)) + androidx.compose.animation.fadeIn(),
+                exit = androidx.compose.animation.scaleOut() + androidx.compose.animation.fadeOut(),
+            ) {
+                Box(
+                    Modifier
+                        .padding(8.dp)
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.Black.copy(alpha = 0.55f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(GIcons.SdCard, contentDescription = "On SD card", tint = Color.White, modifier = Modifier.size(16.dp))
                 }
             }
         }
@@ -232,6 +255,18 @@ fun AlbumsScreen(
         m
     }
     val hiddenAlbums by vm.hiddenAlbums.collectAsStateWithLifecycle()
+    val sdCtx = LocalContext.current
+    val onSd by produceState(emptySet<Long>(), albums, hiddenAlbums) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val internal = sleepless_index.haze.data.MediaOps.storageRoots(sdCtx).first().second
+            val out = HashSet<Long>()
+            for (a in albums + hiddenAlbums) {
+                val path = sleepless_index.haze.data.MediaOps.pathOf(sdCtx, a.cover.uri)
+                if (path != null && !path.startsWith(internal)) out += a.bucketId
+            }
+            out
+        }
+    }
     val prefs by vm.prefs.collectAsStateWithLifecycle()
     var showHidden by rememberSaveable { mutableStateOf(false) }
     var actionAlbum by remember { mutableStateOf<sleepless_index.haze.data.Album?>(null) }
@@ -352,6 +387,7 @@ fun AlbumsScreen(
                         cover = album.cover,
                         bytes = sizes[album.bucketId],
                         pinned = album.bucketId in prefs.pinned,
+                        sd = album.bucketId in onSd,
                         onLongClick = {
                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                             actionAlbum = album
@@ -376,6 +412,7 @@ fun AlbumsScreen(
                             name = album.name,
                             count = album.count,
                             cover = album.cover,
+                            sd = album.bucketId in onSd,
                             onLongClick = {
                                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                                 actionAlbum = album

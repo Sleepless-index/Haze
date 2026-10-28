@@ -524,35 +524,16 @@ fun SettingsScreen(vm: GalleryViewModel, onBack: () -> Unit, onOpenPermissions: 
             }
 
             SectionLabel("About")
-            val perfLines by sleepless_index.haze.util.PerfLog.lines.collectAsStateWithLifecycle()
-            val aboutContext = androidx.compose.ui.platform.LocalContext.current
-            val versionName = remember {
-                runCatching { aboutContext.packageManager.getPackageInfo(aboutContext.packageName, 0).versionName }.getOrNull() ?: ""
-            }
-            var showPerf by remember { mutableStateOf(false) }
             CardGroup {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
-                        .bounceClick(onClick = { showPerf = !showPerf })
                         .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("Haze", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
-                    Text("v$versionName", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant)
-                }
-                if (showPerf) {
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(cs.outline))
-                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Speed log", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant)
-                        if (perfLines.isEmpty()) {
-                            Text("Nothing recorded yet.", fontSize = 12.5.sp, color = cs.onSurfaceVariant)
-                        }
-                        for (line in perfLines.asReversed()) {
-                            Text(line, fontSize = 12.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, color = cs.onBackground)
-                        }
-                    }
+                    Text("v0.1.0", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant)
                 }
             }
         }

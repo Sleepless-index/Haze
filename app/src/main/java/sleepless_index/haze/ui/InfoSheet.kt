@@ -1,5 +1,6 @@
 package sleepless_index.haze.ui
 
+import kotlinx.coroutines.launch
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -161,17 +162,20 @@ fun InfoSheet(
     var renaming by remember { mutableStateOf(false) }
     var removingLocation by remember { mutableStateOf(false) }
     var techOpen by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    val scroll = rememberScrollState()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+        sheetState = sheetState,
         containerColor = if (translucent) cs.surface.copy(alpha = 0.72f) else cs.surface,
         contentColor = cs.onBackground,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scroll)
                 .navigationBarsPadding()
                 .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -319,11 +323,23 @@ fun InfoSheet(
 
             // Technical details: folded away until asked for
             if (info.tech.isNotEmpty()) {
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cardBg).animateContentSize()) {
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cardBg)
+                        .animateContentSize(androidx.compose.animation.core.spring(dampingRatio = 0.9f, stiffness = 380f)),
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .bounceClick(onClick = { techOpen = !techOpen })
+                            .bounceClick(onClick = {
+                                // Keep the sheet exactly where it is (expanded) and the scroll offset
+                                // untouched while the card grows or shrinks.
+                                val keep = scroll.value
+                                techOpen = !techOpen
+                                scope.launch {
+                                    sheetState.expand()
+                                    if (scroll.value != keep) scroll.scrollTo(keep.coerceAtMost(scroll.maxValue))
+                                }
+                            })
                             .padding(horizontal = 14.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -348,7 +364,12 @@ fun InfoSheet(
                                     .padding(horizontal = 12.dp, vertical = 7.dp),
                             )
                         }
-                        Icon(GIcons.ChevronDown, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp).rotate(if (techOpen) 180f else 0f))
+                        val chevron by androidx.compose.animation.core.animateFloatAsState(
+                            if (techOpen) 180f else 0f,
+                            androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 420f),
+                            label = "techChevron",
+                        )
+                        Icon(GIcons.ChevronDown, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(18.dp).rotate(chevron))
                     }
                     if (techOpen) {
                         Text(

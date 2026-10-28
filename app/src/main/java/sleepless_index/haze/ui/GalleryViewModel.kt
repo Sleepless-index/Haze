@@ -119,27 +119,6 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     private val _trashed = MutableStateFlow<List<MediaItem>>(emptyList())
     val trashed: StateFlow<List<MediaItem>> = _trashed
 
-    // ---- search ------------------------------------------------------------------------------
-    private val _searchFilter = MutableStateFlow(sleepless_index.haze.data.SearchFilter())
-    val searchFilter: StateFlow<sleepless_index.haze.data.SearchFilter> = _searchFilter
-
-    fun setSearchFilter(f: sleepless_index.haze.data.SearchFilter) { _searchFilter.value = f }
-
-    fun addRecentSearch(query: String) {
-        val q = query.trim()
-        if (q.length < 2) return
-        val next = (listOf(q) + prefs.value.recentSearches.filterNot { it.equals(q, ignoreCase = true) }).take(8)
-        viewModelScope.launch { g.settings.setRecentSearches(next) }
-    }
-
-    fun removeRecentSearch(query: String) {
-        viewModelScope.launch { g.settings.setRecentSearches(prefs.value.recentSearches.filterNot { it == query }) }
-    }
-
-    fun clearRecentSearches() {
-        viewModelScope.launch { g.settings.setRecentSearches(emptyList()) }
-    }
-
     // ---- clean up ----------------------------------------------------------------------------
     private val _cleanup = MutableStateFlow(sleepless_index.haze.data.CleanupResult())
     val cleanup: StateFlow<sleepless_index.haze.data.CleanupResult> = _cleanup
