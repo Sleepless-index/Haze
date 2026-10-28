@@ -330,16 +330,7 @@ fun InfoSheet(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .bounceClick(onClick = {
-                                // Keep the sheet exactly where it is (expanded) and the scroll offset
-                                // untouched while the card grows or shrinks.
-                                val keep = scroll.value
-                                techOpen = !techOpen
-                                scope.launch {
-                                    sheetState.expand()
-                                    if (scroll.value != keep) scroll.scrollTo(keep.coerceAtMost(scroll.maxValue))
-                                }
-                            })
+                            .bounceClick(onClick = { techOpen = !techOpen })
                             .padding(horizontal = 14.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
