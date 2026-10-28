@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -38,6 +39,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -51,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -151,7 +155,8 @@ fun InfoSheet(
 ) {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
-    val info by produceState(basicInfo(item), item.id) { value = readInfo(context, item) }
+    var infoLoaded by remember(item.id) { mutableStateOf(false) }
+    val info by produceState(basicInfo(item), item.id) { value = readInfo(context, item); infoLoaded = true }
     val zone = ZoneId.systemDefault()
     val moment = Instant.ofEpochMilli(item.dateMs).atZone(zone)
     val dayText = DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.getDefault()).format(moment)
@@ -172,10 +177,24 @@ fun InfoSheet(
         containerColor = if (translucent) cs.surface.copy(alpha = 0.72f) else cs.surface,
         contentColor = cs.onBackground,
     ) {
+        // The sheet's height must not change when Technical details opens or closes, otherwise the
+        // sheet re-anchors and jumps. So it is pinned to the height of the folded content; opening
+        // the card just adds rows underneath that you scroll to.
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        var contentH by remember { mutableIntStateOf(0) }
+        var foldedH by remember { mutableIntStateOf(0) }
+        LaunchedEffect(contentH, techOpen, infoLoaded) {
+            if (!techOpen && infoLoaded && contentH > 0) {
+                kotlinx.coroutines.delay(450)
+                foldedH = contentH
+            }
+        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .then(if (foldedH > 0) Modifier.height(with(density) { foldedH.toDp() }) else Modifier)
                 .verticalScroll(scroll)
+                .onSizeChanged { contentH = it.height }
                 .navigationBarsPadding()
                 .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -322,6 +341,7 @@ fun InfoSheet(
             }
 
             // Technical details: folded away until asked for
+            if (!infoLoaded) Spacer(Modifier.height(54.dp))
             if (info.tech.isNotEmpty()) {
                 Column(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cardBg)
