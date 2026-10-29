@@ -45,6 +45,9 @@ sealed interface UiEvent {
     data class Message(val text: String) : UiEvent
 }
 
+/** A long-running operation shown as a spinner over the whole app. [progress] is 0..1 when known. */
+data class Busy(val text: String, val progress: Float? = null)
+
 class GalleryViewModel(app: Application) : AndroidViewModel(app) {
 
     private val g = app as GalleryApp
@@ -160,11 +163,23 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
         _cleanupFreed.value = null
     }
 
-    fun refresh() {
+    private val _busy = MutableStateFlow<Busy?>(null)
+    val busy: StateFlow<Busy?> = _busy
+
+    /** Shows (or, with null text, hides) the spinner. Safe to call from any thread. */
+    fun setBusy(text: String?, progress: Float? = null) {
+        _busy.value = text?.let { Busy(it, progress) }
+    }
+
+    fun refresh(thenClearBusy: Boolean = false) {
         viewModelScope.launch {
-            repo.refresh()
-            _trashed.value = repo.queryTrashed()
-            purgeTrash()
+            try {
+                repo.refresh()
+                _trashed.value = repo.queryTrashed()
+                purgeTrash()
+            } finally {
+                if (thenClearBusy) _busy.value = null
+            }
         }
     }
 
@@ -353,10 +368,30 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
             val gone = pendingIds.toHashSet()
             _viewerList.value = _viewerList.value.filter { it.id !in gone }
             clearSelection()
-            refresh()
+            setBusy("Updating your library")
+            refresh(thenClearBusy = true)
+        } else {
+            _busy.value = null
         }
         pendingIds = emptyList()
     }
+
+    fun setWallpaper(item: MediaItem, which: Int) {
+        viewModelScope.launch {
+            setBusy("Setting wallpaper")
+            val ok = try { sleepless_index.haze.data.WallpaperOps.set(getApplication(), item, which) } finally { _busy.value = null }
+            message(
+                if (!ok) "Couldn't set the wallpaper"
+                else when (which) {
+                    sleepless_index.haze.data.WallpaperOps.HOME -> "Home screen wallpaper set"
+                    sleepless_index.haze.data.WallpaperOps.LOCK -> "Lock screen wallpaper set"
+                    else -> "Wallpaper set on home and lock screens"
+                },
+            )
+        }
+    }
+
+    fun countText(n: Int) = if (n == 1) "1 item" else "$n items"
 
     // ---- copy / move to album --------------------------------------------
     fun transferToAlbum(list: List<MediaItem>, album: Album, move: Boolean) {
@@ -378,11 +413,16 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
         val name = dir.trimEnd('/').substringAfterLast('/')
         val verb = if (move) "Moved" else "Copied"
         if (MediaOps.hasAllFiles()) {
-            if (list.size > 2) message(if (move) "Moving…" else "Copying…")
-            val n = MediaOps.transfer(app, list, dir, move)
+            val label = (if (move) "Moving " else "Copying ") + countText(list.size)
+            setBusy(label, 0f)
+            val n = try {
+                MediaOps.transfer(app, list, dir, move) { done -> setBusy(label, done / list.size.toFloat()) }
+            } finally {
+                setBusy("Updating your library")
+            }
             clearSelection()
             if (move && n > 0) _viewerList.value = _viewerList.value.filter { v -> list.none { it.id == v.id } }
-            refresh()
+            refresh(thenClearBusy = true)
             message(if (n > 0) "$verb $n to $name" else "Couldn't ${if (move) "move" else "copy"} those files")
             return
         }
@@ -397,10 +437,16 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         val rel = dir.removePrefix("$internal/").trimEnd('/') + "/"
-        val done = MediaOps.copyItems(app, list, rel)
+        val label = "Copying " + countText(list.size)
+        setBusy(label, 0f)
+        val done = try {
+            MediaOps.copyItems(app, list, rel) { d -> setBusy(label, d / list.size.toFloat()) }
+        } finally {
+            setBusy("Updating your library")
+        }
         clearSelection()
         message(if (done.isEmpty()) "Couldn't copy those files" else "Copied ${done.size} to $name")
-        refresh()
+        refresh(thenClearBusy = true)
     }
 
     // ---- vault ----------------------------------------------------------
@@ -425,7 +471,8 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     fun moveToVault(list: List<MediaItem>) {
         if (list.isEmpty()) return
         viewModelScope.launch {
-            val stored = vaultStore.add(list)
+            setBusy("Moving ${countText(list.size)} to the Vault")
+            val stored = try { vaultStore.add(list) } finally { _busy.value = null }
             clearSelection()
             loadVault()
             if (stored.isEmpty()) {
@@ -441,7 +488,8 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     fun vaultRestore(list: List<MediaItem>) {
         if (list.isEmpty()) return
         viewModelScope.launch {
-            val n = vaultStore.restore(list)
+            setBusy("Restoring ${countText(list.size)}")
+            val n = try { vaultStore.restore(list) } finally { _busy.value = null }
             clearSelection()
             _viewerList.value = _viewerList.value.filter { v -> list.none { it.id == v.id } }
             loadVault()
@@ -453,7 +501,8 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     fun vaultDelete(list: List<MediaItem>) {
         if (list.isEmpty()) return
         viewModelScope.launch {
-            vaultStore.delete(list)
+            setBusy("Deleting ${countText(list.size)}")
+            try { vaultStore.delete(list) } finally { _busy.value = null }
             clearSelection()
             _viewerList.value = _viewerList.value.filter { v -> list.none { it.id == v.id } }
             loadVault()

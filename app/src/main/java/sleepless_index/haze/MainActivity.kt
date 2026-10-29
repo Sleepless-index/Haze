@@ -32,6 +32,7 @@ import sleepless_index.haze.ui.GalleryViewModel
 import sleepless_index.haze.ui.UiEvent
 import sleepless_index.haze.ui.theme.GalleryTheme
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : FragmentActivity() {
 
@@ -91,11 +92,14 @@ class MainActivity : FragmentActivity() {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
 
-    /** Trash / restore / delete directly when we have All files access. True if it worked. */
-    private fun direct(uris: List<Uri>, op: String): Boolean {
-        if (Build.VERSION.SDK_INT < 30 || !Environment.isExternalStorageManager()) return false
+    private fun canDirect() = Build.VERSION.SDK_INT >= 30 && Environment.isExternalStorageManager()
+
+    /** Trash / restore / delete directly (All files access). Runs off the main thread. True if it all worked. */
+    private fun direct(uris: List<Uri>, op: String, onProgress: (Int) -> Unit): Boolean {
+        if (!canDirect()) return false
         return runCatching {
-            uris.forEach { u ->
+            uris.forEachIndexed { i, u ->
+                onProgress(i)
                 when (op) {
                     "trash" -> contentResolver.update(u, ContentValues().apply { put(MediaStore.MediaColumns.IS_TRASHED, 1) }, null, null)
                     "restore" -> contentResolver.update(u, ContentValues().apply { put(MediaStore.MediaColumns.IS_TRASHED, 0) }, null, null)
@@ -104,6 +108,26 @@ class MainActivity : FragmentActivity() {
             }
             true
         }.getOrDefault(false)
+    }
+
+    /** Runs [direct] with a spinner. Calls [fallback] if it couldn't be done without asking the system. */
+    private fun directWithSpinner(uris: List<Uri>, op: String, label: String, fallback: () -> Unit) {
+        if (!canDirect()) {
+            fallback()
+            return
+        }
+        lifecycleScope.launch {
+            vm.setBusy(label, 0f)
+            val ok = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                direct(uris, op) { done -> vm.setBusy(label, done / uris.size.toFloat()) }
+            }
+            if (ok) {
+                vm.onSystemDialogResult(true)
+            } else {
+                vm.setBusy(null)
+                fallback()
+            }
+        }
     }
 
     private fun granted(p: String) =
@@ -155,6 +179,7 @@ class MainActivity : FragmentActivity() {
         setContent {
             val prefs by vm.prefs.collectAsStateWithLifecycle()
             GalleryTheme(prefs) {
+              androidx.compose.foundation.layout.Box {
                 GalleryRoot(
                     vm = vm,
                     perms = perms.value,
@@ -166,6 +191,8 @@ class MainActivity : FragmentActivity() {
                         else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     },
                 )
+                sleepless_index.haze.ui.BusyOverlay(vm)
+              }
             }
         }
     }
@@ -243,33 +270,30 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun trash(uris: List<Uri>, toTrash: Boolean) {
-        if (direct(uris, if (toTrash) "trash" else "restore")) {
-            vm.onSystemDialogResult(true)
-            return
-        }
-        if (Build.VERSION.SDK_INT >= 30) {
-            val pending = MediaStore.createTrashRequest(contentResolver, uris, toTrash)
-            launchSender(pending.intentSender)
-        } else if (toTrash) {
-            // Android 10 has no system trash: this permanently deletes after the system asks.
-            legacyDeleteQueue.clear()
-            legacyDeleteQueue.addAll(uris)
-            processLegacyDeletes()
+        val label = (if (toTrash) "Moving " else "Restoring ") + vm.countText(uris.size) + (if (toTrash) " to Trash" else "")
+        directWithSpinner(uris, if (toTrash) "trash" else "restore", label) {
+            if (Build.VERSION.SDK_INT >= 30) {
+                val pending = MediaStore.createTrashRequest(contentResolver, uris, toTrash)
+                launchSender(pending.intentSender)
+            } else if (toTrash) {
+                // Android 10 has no system trash: this permanently deletes after the system asks.
+                legacyDeleteQueue.clear()
+                legacyDeleteQueue.addAll(uris)
+                processLegacyDeletes()
+            }
         }
     }
 
     private fun deleteForever(uris: List<Uri>) {
-        if (direct(uris, "delete")) {
-            vm.onSystemDialogResult(true)
-            return
-        }
-        if (Build.VERSION.SDK_INT >= 30) {
-            val pending = MediaStore.createDeleteRequest(contentResolver, uris)
-            launchSender(pending.intentSender)
-        } else {
-            legacyDeleteQueue.clear()
-            legacyDeleteQueue.addAll(uris)
-            processLegacyDeletes()
+        directWithSpinner(uris, "delete", "Deleting " + vm.countText(uris.size)) {
+            if (Build.VERSION.SDK_INT >= 30) {
+                val pending = MediaStore.createDeleteRequest(contentResolver, uris)
+                launchSender(pending.intentSender)
+            } else {
+                legacyDeleteQueue.clear()
+                legacyDeleteQueue.addAll(uris)
+                processLegacyDeletes()
+            }
         }
     }
 

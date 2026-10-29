@@ -50,13 +50,14 @@ object MediaOps {
      * copy + delete, only deleting the original after the copy checks out.
      * Returns how many files were transferred.
      */
-    suspend fun transfer(context: Context, items: List<MediaItem>, destDir: String, move: Boolean): Int =
+    suspend fun transfer(context: Context, items: List<MediaItem>, destDir: String, move: Boolean, onProgress: (Int) -> Unit = {}): Int =
         withContext(Dispatchers.IO) {
             val dir = File(destDir).also { it.mkdirs() }
             if (!dir.isDirectory) return@withContext 0
             val touched = ArrayList<String>()
             var done = 0
-            for (item in items) {
+            for ((index, item) in items.withIndex()) {
+                onProgress(index)
                 val src = pathOf(context, item.uri)?.let { File(it) } ?: continue
                 if (!src.exists()) continue
                 if (move && src.parentFile?.absolutePath == dir.absolutePath) continue
@@ -104,10 +105,11 @@ object MediaOps {
      * Copies items into [relativeDir] as new MediaStore entries. Originals are never touched.
      * Returns the items that were copied successfully.
      */
-    suspend fun copyItems(context: Context, items: List<MediaItem>, relativeDir: String): List<MediaItem> =
+    suspend fun copyItems(context: Context, items: List<MediaItem>, relativeDir: String, onProgress: (Int) -> Unit = {}): List<MediaItem> =
         withContext(Dispatchers.IO) {
             val done = ArrayList<MediaItem>()
-            for (item in items) {
+            for ((index, item) in items.withIndex()) {
+                onProgress(index)
                 val ok = runCatching {
                     context.contentResolver.openInputStream(item.uri)?.use { input ->
                         insert(context, input, item.name, item.mime, item.isVideo, item.dateMs, relativeDir)
