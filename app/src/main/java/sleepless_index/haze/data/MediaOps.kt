@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import android.media.MediaScannerConnection
 import android.os.Build
@@ -57,6 +58,7 @@ object MediaOps {
             val touched = ArrayList<String>()
             var done = 0
             for ((index, item) in items.withIndex()) {
+                kotlin.coroutines.coroutineContext.ensureActive()
                 onProgress(index)
                 val src = pathOf(context, item.uri)?.let { File(it) } ?: continue
                 if (!src.exists()) continue

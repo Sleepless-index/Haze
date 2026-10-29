@@ -170,6 +170,39 @@ private fun CardGroup(modifier: Modifier = Modifier, content: @Composable () -> 
 }
 
 @Composable
+private fun SegmentRow(title: String, options: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
+        Row(
+            Modifier.clip(shape).background(cs.background).border(BorderStroke(1.dp, cs.outline), shape).padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            options.forEachIndexed { i, label ->
+                val on = i == selected
+                val bg by animateColorAsState(if (on) cs.primary else Color.Transparent, tween(220), label = "segBg")
+                val fg by animateColorAsState(if (on) cs.onPrimary else cs.onSurfaceVariant, tween(220), label = "segFg")
+                Box(
+                    Modifier
+                        .height(30.dp)
+                        .clip(RoundedCornerShape(15.dp))
+                        .background(bg)
+                        .bounceClick(role = Role.RadioButton, onClick = { onSelect(i) })
+                        .padding(horizontal = 14.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(label, fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold, color = fg)
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun ToggleRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     val cs = MaterialTheme.colorScheme
     Row(
@@ -396,7 +429,51 @@ fun SettingsScreen(vm: GalleryViewModel, onBack: () -> Unit, onOpenPermissions: 
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 100.dp + navBottom),
         ) {
-            SectionLabel("Layout")
+            val divider: @Composable () -> Unit = {
+                Box(Modifier.fillMaxWidth().padding(start = 16.dp).height(1.dp).background(cs.outline))
+            }
+
+            SectionLabel("Appearance")
+            CardGroup {
+                val modes = listOf(ThemeMode.AMOLED, ThemeMode.DARK, ThemeMode.LIGHT)
+                SegmentRow(
+                    title = "Theme",
+                    options = listOf("AMOLED", "Dark", "Light"),
+                    selected = modes.indexOf(prefs.theme).coerceAtLeast(0),
+                    onSelect = { vm.setTheme(modes[it]) },
+                )
+                divider()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(start = 16.dp, end = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Accent", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
+                    Presets.forEach { (name, argb) ->
+                        Swatch(
+                            color = Color(argb),
+                            selected = prefs.accent == argb,
+                            label = name,
+                            onClick = { vm.setAccent(argb) },
+                        )
+                    }
+                    Swatch(
+                        color = if (isPreset) cs.surfaceVariant else Color(prefs.accent),
+                        selected = !isPreset,
+                        label = "Custom",
+                        content = {
+                            if (isPreset) {
+                                Icon(GIcons.Plus, contentDescription = "Custom color", tint = cs.onBackground, modifier = Modifier.size(18.dp))
+                            }
+                        },
+                        onClick = { showCustom = true },
+                    )
+                }
+            }
+
+            SectionLabel("Gallery")
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -425,7 +502,7 @@ fun SettingsScreen(vm: GalleryViewModel, onBack: () -> Unit, onOpenPermissions: 
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "Grid columns", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        "Photos per row", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                         color = cs.onBackground, modifier = Modifier.weight(1f),
                     )
                     GIconButton(
@@ -452,64 +529,47 @@ fun SettingsScreen(vm: GalleryViewModel, onBack: () -> Unit, onOpenPermissions: 
                 }
             }
 
-            SectionLabel("Accent color")
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Presets.forEach { (name, argb) ->
-                    Swatch(
-                        color = Color(argb),
-                        selected = prefs.accent == argb,
-                        label = name,
-                        onClick = { vm.setAccent(argb) },
-                    )
-                }
-                Swatch(
-                    color = if (isPreset) cs.surfaceVariant else Color(prefs.accent),
-                    selected = !isPreset,
-                    label = "Custom",
-                    content = {
-                        if (isPreset) {
-                            Icon(GIcons.Plus, contentDescription = "Custom color", tint = cs.onBackground, modifier = Modifier.size(18.dp))
-                        }
-                    },
-                    onClick = { showCustom = true },
-                )
-            }
-
-            SectionLabel("Theme")
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                listOf(ThemeMode.AMOLED to "AMOLED", ThemeMode.DARK to "Dark", ThemeMode.LIGHT to "Light").forEach { (mode, label) ->
-                    ThemeChip(
-                        label = label,
-                        active = prefs.theme == mode,
-                        onClick = { vm.setTheme(mode) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-
-            SectionLabel("Video")
+            SectionLabel("Viewer and video")
             CardGroup {
-                ToggleRow("Resume where you left off", prefs.resume) { vm.setResume(it) }
-                Box(Modifier.fillMaxWidth().height(1.dp).background(cs.outline))
-                ToggleRow("Autoplay when opened", prefs.autoplay) { vm.setAutoplay(it) }
-            }
-
-            SectionLabel("Viewer")
-            CardGroup {
-                ToggleRow("Blurred backgrounds (photo & details)", prefs.blur) { vm.setBlur(it) }
+                ToggleRow("Blurred backgrounds", prefs.blur) { vm.setBlur(it) }
+                divider()
+                ToggleRow("Resume videos where you left off", prefs.resume) { vm.setResume(it) }
+                divider()
+                ToggleRow("Autoplay videos", prefs.autoplay) { vm.setAutoplay(it) }
             }
 
             SectionLabel("Storage")
             CardGroup {
+                var daysMenu by remember { mutableStateOf(false) }
+                Box {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .bounceClick(onClick = { daysMenu = true })
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("Keep deleted items for", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
+                        Text("${prefs.trashDays} days", fontSize = 13.sp, color = cs.onSurfaceVariant)
+                        Icon(GIcons.ChevronRight, null, tint = cs.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp).size(16.dp))
+                    }
+                    androidx.compose.material3.DropdownMenu(
+                        expanded = daysMenu,
+                        onDismissRequest = { daysMenu = false },
+                    ) {
+                        listOf(7, 14, 30).forEach { d ->
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text("$d days", fontWeight = if (d == prefs.trashDays) FontWeight.Bold else FontWeight.Normal) },
+                                onClick = {
+                                    vm.setTrashDays(d)
+                                    daysMenu = false
+                                },
+                            )
+                        }
+                    }
+                }
+                divider()
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -519,21 +579,7 @@ fun SettingsScreen(vm: GalleryViewModel, onBack: () -> Unit, onOpenPermissions: 
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("Permissions", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
-                    Text("Manage", fontSize = 13.sp, color = cs.onSurfaceVariant)
-                }
-            }
-
-            SectionLabel("About")
-            CardGroup {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Haze", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, modifier = Modifier.weight(1f))
-                    Text("v0.1.0", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant)
+                    Icon(GIcons.ChevronRight, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp))
                 }
             }
         }

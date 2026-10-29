@@ -46,7 +46,13 @@ sealed interface UiEvent {
 }
 
 /** A long-running operation shown as a spinner over the whole app. [progress] is 0..1 when known. */
-data class Busy(val text: String, val progress: Float? = null)
+data class Busy(
+    val text: String,
+    val progress: Float? = null,
+    val detail: String? = null,
+    val cancellable: Boolean = false,
+    val blocking: Boolean = false,
+)
 
 class GalleryViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -58,6 +64,7 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     val prefs: StateFlow<Prefs> =
         g.settings.flow.stateIn(viewModelScope, SharingStarted.Eagerly, Prefs())
 
+    fun setTrashDays(v: Int) = viewModelScope.launch { g.settings.setTrashDays(v) }
     fun setLayout(v: LayoutMode) = viewModelScope.launch { g.settings.setLayout(v) }
     fun setColumns(v: Int) = viewModelScope.launch { g.settings.setColumns(v) }
     fun setTheme(v: ThemeMode) = viewModelScope.launch { g.settings.setTheme(v) }
@@ -167,8 +174,15 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     val busy: StateFlow<Busy?> = _busy
 
     /** Shows (or, with null text, hides) the spinner. Safe to call from any thread. */
-    fun setBusy(text: String?, progress: Float? = null) {
-        _busy.value = text?.let { Busy(it, progress) }
+    fun setBusy(text: String?, progress: Float? = null, detail: String? = null, cancellable: Boolean = false, blocking: Boolean = false) {
+        _busy.value = text?.let { Busy(it, progress, detail, cancellable, blocking) }
+    }
+
+    private var busyJob: kotlinx.coroutines.Job? = null
+
+    /** Stops the running move / copy after the file it is on. Whatever was already done stays done. */
+    fun cancelBusy() {
+        busyJob?.cancel()
     }
 
     fun refresh(thenClearBusy: Boolean = false) {
@@ -192,7 +206,7 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Permanently removes items that have sat in the trash longer than the chosen number of days. */
     private suspend fun purgeTrash() {
-        val days = 30
+        val days = prefs.value.trashDays
         if (!MediaOps.hasAllFiles()) return
         val cutoff = System.currentTimeMillis() - days * 24L * 3600 * 1000
         val old = _trashed.value.filter { it.trashedMs in 1 until cutoff }
@@ -378,7 +392,7 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setWallpaper(item: MediaItem, which: Int) {
         viewModelScope.launch {
-            setBusy("Setting wallpaper")
+            setBusy("Setting wallpaper", blocking = true)
             val ok = try { sleepless_index.haze.data.WallpaperOps.set(getApplication(), item, which) } finally { _busy.value = null }
             message(
                 if (!ok) "Couldn't set the wallpaper"
@@ -396,7 +410,8 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     // ---- copy / move to album --------------------------------------------
     fun transferToAlbum(list: List<MediaItem>, album: Album, move: Boolean) {
         if (list.isEmpty()) return
-        viewModelScope.launch {
+        if (_busy.value != null) { message("Wait for the current job to finish"); return }
+        busyJob = viewModelScope.launch {
             val dir = MediaOps.albumAbsDir(getApplication(), album)
             if (dir == null) message("Couldn't find that album's folder") else doTransfer(list, dir, move)
         }
@@ -405,7 +420,8 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     fun transferToNew(list: List<MediaItem>, root: String, name: String, move: Boolean) {
         if (list.isEmpty()) return
         val clean = name.trim().replace(Regex("[\\\\/:*?\"<>|]"), "_").ifBlank { "New album" }
-        viewModelScope.launch { doTransfer(list, "$root/Pictures/$clean", move) }
+        if (_busy.value != null) { message("Wait for the current job to finish"); return }
+        busyJob = viewModelScope.launch { doTransfer(list, "$root/Pictures/$clean", move) }
     }
 
     private suspend fun doTransfer(list: List<MediaItem>, dir: String, move: Boolean) {
@@ -414,16 +430,27 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
         val verb = if (move) "Moved" else "Copied"
         if (MediaOps.hasAllFiles()) {
             val label = (if (move) "Moving " else "Copying ") + countText(list.size)
-            setBusy(label, 0f)
+            val detail = "to $name"
+            setBusy(label, 0f, detail, cancellable = true)
+            var cancelled = false
             val n = try {
-                MediaOps.transfer(app, list, dir, move) { done -> setBusy(label, done / list.size.toFloat()) }
+                MediaOps.transfer(app, list, dir, move) { done -> setBusy(label, done / list.size.toFloat(), detail, cancellable = true) }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                cancelled = true
+                0
             } finally {
                 setBusy("Updating your library")
             }
             clearSelection()
             if (move && n > 0) _viewerList.value = _viewerList.value.filter { v -> list.none { it.id == v.id } }
             refresh(thenClearBusy = true)
-            message(if (n > 0) "$verb $n to $name" else "Couldn't ${if (move) "move" else "copy"} those files")
+            message(
+                when {
+                    cancelled -> "Stopped. Anything already done stays done."
+                    n > 0 -> "$verb $n to $name"
+                    else -> "Couldn't ${if (move) "move" else "copy"} those files"
+                },
+            )
             return
         }
         // Without All files access only copying into internal Pictures/ DCIM is possible.
