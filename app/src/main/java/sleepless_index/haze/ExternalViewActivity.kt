@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +30,7 @@ import sleepless_index.haze.ui.theme.GalleryTheme
 /** Lets other apps open images and videos in this gallery ("Open with"). */
 class ExternalViewActivity : ComponentActivity() {
 
-    private val vm: sleepless_index.haze.ui.GalleryViewModel by androidx.activity.viewModels()
+    private val vm: sleepless_index.haze.ui.GalleryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

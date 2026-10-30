@@ -31,6 +31,8 @@ data class Prefs(
     val autoNext: Boolean = false,
     val bgPlay: Boolean = false,
     val trashDays: Int = 30,
+    /** 0 = pick per video, 1 = always landscape, 2 = always portrait (set by the rotate button). */
+    val playerOrientation: Int = 0,
     val pinned: Set<Long> = emptySet(),
     val hidden: Set<Long> = emptySet(),
     val vaultLock: String = "",
@@ -61,6 +63,7 @@ class SettingsStore(private val context: Context) {
     private val kAutoNext = booleanPreferencesKey("autoNext")
     private val kBgPlay = booleanPreferencesKey("bgPlay")
     private val kTrashDays = intPreferencesKey("trashDays")
+    private val kPlayerOrientation = intPreferencesKey("playerOrientation")
     private val kPinned = stringSetPreferencesKey("pinnedAlbums")
     private val kHidden = stringSetPreferencesKey("hiddenAlbums")
     private val kVaultLock = stringPreferencesKey("vaultLock")
@@ -80,6 +83,7 @@ class SettingsStore(private val context: Context) {
             autoNext = p[kAutoNext] ?: false,
             bgPlay = p[kBgPlay] ?: false,
             trashDays = p[kTrashDays] ?: 30,
+            playerOrientation = p[kPlayerOrientation] ?: 0,
             pinned = (p[kPinned] ?: emptySet()).mapNotNull { it.toLongOrNull() }.toSet(),
             hidden = (p[kHidden] ?: emptySet()).mapNotNull { it.toLongOrNull() }.toSet(),
             vaultLock = p[kVaultLock] ?: "",
@@ -99,6 +103,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setShuffle(v: Boolean) { context.dataStore.edit { it[kShuffle] = v } }
     suspend fun setAutoNext(v: Boolean) { context.dataStore.edit { it[kAutoNext] = v } }
     suspend fun setBgPlay(v: Boolean) { context.dataStore.edit { it[kBgPlay] = v } }
+    suspend fun setPlayerOrientation(v: Int) { context.dataStore.edit { it[kPlayerOrientation] = v } }
     suspend fun setTrashDays(v: Int) { context.dataStore.edit { it[kTrashDays] = v } }
 
     suspend fun setStripLocation(v: Boolean) { context.dataStore.edit { it[kStripLocation] = v } }

@@ -666,8 +666,15 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
     }
 
     // Each video opens in the orientation that suits it.
+    // Unless you've rotated it yourself: then your choice is remembered for every video.
     LaunchedEffect(curIdx) {
-        activity?.requestedOrientation = if (item.width >= item.height) {
+        val remembered = vm.prefs.value.playerOrientation
+        val land = when (remembered) {
+            1 -> true
+            2 -> false
+            else -> item.width >= item.height
+        }
+        activity?.requestedOrientation = if (land) {
             ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         } else {
             ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
@@ -1350,6 +1357,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                         }
                         val rotateButton: @Composable () -> Unit = {
                             RoundChrome(GIcons.ScreenRotate, "Rotate screen", 36) {
+                                vm.setPlayerOrientation(if (landNow) 2 else 1)
                                 activity?.requestedOrientation = if (landNow) {
                                     ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
                                 } else {
@@ -1426,10 +1434,8 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                 }
             }
         }
-    }
-
-    if (queueSheet) {
-        QueueSheet(
+        QueuePanel(
+            visible = queueSheet,
             queue = queue,
             currentIndex = curIdx,
             loop = prefs.loop,
