@@ -8,18 +8,17 @@ A fast, local-only gallery for Android. AMOLED-minimal, no network, no tracking.
 
 ## Features
 
-- Grid or masonry timeline, fast scroller, search by name, album or month
-- Albums with pin, rename, hide and delete; Favorites and Videos albums; Trash with days-left badges and delete-all
-- Viewer with zoom, swipeable thumbnail strip, info sheet, Lens search, wallpaper / contact photo, blurred ambient background
+- Grid or masonry timeline with a fast scroller; search by name, album or month
+- Albums with pin, rename, hide and delete, plus Favorites and Videos; an SD card badge on albums stored there
+- Trash with days-left badges, delete-all and a choice of how long to keep items
+- Viewer with zoom, a swipeable thumbnail strip, a details sheet and a blurred ambient background
 - Clean up: find duplicates, similar photos, old screenshots and large videos, review them, and move them to Trash
-- Every delete, move to album and move to Vault asks first in a bottom sheet
 - Vault with its own lock (PIN, pattern or password)
 - Photo editor: crop, rotate, straighten, adjustments, filters, undo / redo (saves a copy)
 - Video editor: trim, crop, rotate, adjustments, filters, mute, undo / redo (exports a copy)
-- Metadata: edit the date taken, remove location, and photos are shared without their GPS position
-- Video player on Media3: gestures, playback queue with loop/shuffle/autoplay, subtitles (including loading .srt / .vtt files), audio tracks, resume, background play, PiP, mirror
-- Details sheet: date, file, camera, location and path cards
-- Theming: AMOLED / Dark / Light, custom accent color
+- Edit the date taken, remove location, and share photos without their GPS position
+- Video player on Media3: gestures, playback queue with loop / shuffle / autoplay, subtitles (including .srt / .vtt files), audio tracks, resume, background play, PiP
+- AMOLED / Dark / Light themes with a custom accent color
 
 ## Install
 
