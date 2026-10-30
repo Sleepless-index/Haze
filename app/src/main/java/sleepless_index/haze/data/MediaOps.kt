@@ -91,6 +91,33 @@ object MediaOps {
             done
         }
 
+    /**
+     * Some apps (browsers, downloaders, messengers) write a file straight to storage without telling
+     * the media database, so it never shows up in any gallery until the next system scan. This asks
+     * the system to index recent image and video files in the usual folders. Needs All files access.
+     */
+    suspend fun scanRecent(context: Context) = withContext(Dispatchers.IO) {
+        if (!hasAllFiles()) return@withContext
+        val exts = setOf(
+            "jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", "bmp",
+            "mp4", "mkv", "webm", "mov", "m4v", "3gp", "avi", "ts",
+        )
+        val cutoff = System.currentTimeMillis() - 3L * 24 * 3600 * 1000
+        val root = Environment.getExternalStorageDirectory()
+        val found = ArrayList<String>()
+        for (dir in listOf("Download", "DCIM", "Pictures", "Movies")) {
+            runCatching {
+                File(root, dir).walkTopDown().maxDepth(4)
+                    .filter { it.isFile && it.lastModified() > cutoff && it.extension.lowercase() in exts && !it.name.startsWith(".") }
+                    .take(300)
+                    .forEach { found += it.absolutePath }
+            }
+        }
+        if (found.isNotEmpty()) {
+            MediaScannerConnection.scanFile(context, found.toTypedArray(), null, null)
+        }
+    }
+
     /** Where a brand-new album folder is created. */
     fun newAlbumDir(name: String): String {
         val clean = name.trim().replace(Regex("[\\\\/:*?\"<>|]"), "_").ifBlank { "New album" }

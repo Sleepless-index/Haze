@@ -358,6 +358,8 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
     val cs = MaterialTheme.colorScheme
     val config = LocalConfiguration.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val isLand = config.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val narrow = config.screenWidthDp < 520
 
     // The queue: every video in the list the viewer was opened from. ExoPlayer holds all of it,
     // so next / previous / loop / shuffle keep working with the screen off.
@@ -526,6 +528,25 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                 LoopMode.REPEAT -> "Loop repeat"
             },
         )
+    }
+
+    fun toggleBgPlay() {
+        val on = !prefs.bgPlay
+        vm.setBgPlay(on)
+        if (on && Build.VERSION.SDK_INT >= 33) {
+            notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+        hud = Hud(GIcons.Headphones, if (on) "Background play on" else "Background play off")
+    }
+
+    fun cycleTimer() {
+        timerMin = when (timerMin) {
+            0 -> 15
+            15 -> 30
+            30 -> 60
+            else -> 0
+        }
+        hud = Hud(GIcons.Timer, if (timerMin > 0) "Sleep in $timerMin min" else "Timer off")
     }
 
     fun togglePlay() {
@@ -978,7 +999,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                 modifier = Modifier
                     .align(if (side < 0) Alignment.CenterStart else Alignment.CenterEnd)
                     .displayCutoutPadding()
-                    .padding(horizontal = 28.dp),
+                    .padding(horizontal = if (narrow) 12.dp else 28.dp),
                 enter = fadeIn(tween(120)) + scaleIn(tween(160), initialScale = 0.85f),
                 exit = fadeOut(tween(220)) + scaleOut(tween(220), targetScale = 0.9f),
             ) {
@@ -1120,11 +1141,24 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                             }
                             Text(info, color = Color(0xFFA8A8AC), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         }
+                        if (isLand) {
+                            // Landscape has room up here, so the handier options live on the bar.
+                            RoundChrome(GIcons.Subtitles, "Subtitles") { subsMenu = true }
+                            RoundChrome(
+                                GIcons.Headphones, "Background play",
+                                tint = if (prefs.bgPlay) cs.primary else Color.White,
+                            ) { toggleBgPlay() }
+                            RoundChrome(
+                                GIcons.Timer, if (timerMin > 0) "Timer, $timerMin min" else "Timer",
+                                tint = if (timerMin > 0) cs.primary else Color.White,
+                            ) { cycleTimer() }
+                            RoundChrome(GIcons.Share, "Share") { shareItems(context, listOf(item)) }
+                        }
                         RoundChrome(GIcons.Pip, "Picture in picture") { enterPip() }
                         Box {
                             RoundChrome(GIcons.More, "More options") { moreMenu = true }
                             DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
-                                CompactMenuItem(
+                                if (!isLand) CompactMenuItem(
                                     text = { PlayerMenuRow(GIcons.Headphones, "Background play", prefs.bgPlay) },
                                     onClick = {
                                         moreMenu = false
@@ -1136,7 +1170,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                                         hud = Hud(GIcons.Headphones, if (on) "Background play on" else "Background play off")
                                     },
                                 )
-                                CompactMenuItem(
+                                if (!isLand) CompactMenuItem(
                                     text = { PlayerMenuRow(GIcons.Subtitles, "Subtitles") },
                                     onClick = {
                                         moreMenu = false
@@ -1159,7 +1193,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                                         hud = Hud(GIcons.FastForward, if (!prefs.autoNext) "Autoplay next on" else "Autoplay next off")
                                     },
                                 )
-                                CompactMenuItem(
+                                if (!isLand) CompactMenuItem(
                                     text = { PlayerMenuRow(GIcons.Timer, if (timerMin > 0) "Timer · $timerMin min" else "Timer", timerMin > 0) },
                                     onClick = {
                                         moreMenu = false
@@ -1179,7 +1213,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                                         mirror = !mirror
                                     },
                                 )
-                                CompactMenuItem(
+                                if (!isLand) CompactMenuItem(
                                     text = { PlayerMenuRow(GIcons.Share, "Share") },
                                     onClick = {
                                         moreMenu = false
@@ -1242,7 +1276,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                 Row(
                     modifier = Modifier.align(Alignment.Center),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(36.dp),
+                    horizontalArrangement = Arrangement.spacedBy(if (narrow) 20.dp else 36.dp),
                 ) {
                     SkipButton(GIcons.SkipPrevious, "Previous video", hasPrev, box = 56.dp, iconSize = 28.dp, background = PlayerChrome) {
                         player.seekToPreviousMediaItem()

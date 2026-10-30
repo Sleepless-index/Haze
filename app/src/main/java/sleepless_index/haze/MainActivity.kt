@@ -206,6 +206,7 @@ class MainActivity : FragmentActivity() {
         super.onStart()
         // The user may have granted access from system settings.
         updatePermission()
+        if (perms.value.media) vm.onReturn()
     }
 
     private fun handleEvent(event: UiEvent) {

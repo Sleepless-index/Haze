@@ -19,6 +19,7 @@ import sleepless_index.haze.data.ThemeMode
 import sleepless_index.haze.data.buildAlbums
 import sleepless_index.haze.data.buildEntries
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -264,6 +265,20 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     fun deleteAlbum(album: Album) {
         val list = repo.items.value.filter { it.bucketId == album.bucketId }
         requestTrash(list)
+    }
+
+    /**
+     * Called whenever the app comes back to the front. A download or a new photo made while the app
+     * was away can be missed by the change observer, so look again, ask the system to index any
+     * files it hasn't seen, and look once more after the scan has had a moment.
+     */
+    fun onReturn() {
+        refresh()
+        viewModelScope.launch {
+            MediaOps.scanRecent(getApplication())
+            delay(2000)
+            repo.refresh()
+        }
     }
 
     fun startObserving() = repo.startObserving(viewModelScope) {
