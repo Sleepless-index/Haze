@@ -3,7 +3,7 @@
 <h1 align="center">Haze</h1>
 
 <p align="center">
-A fast, local-only gallery for Android. AMOLED-minimal, no network, no tracking.
+A fast, local-only gallery for Android. AMOLED-minimal, no tracking. The only network use is checking GitHub for new releases when you ask it to.
 </p>
 
 ## Features

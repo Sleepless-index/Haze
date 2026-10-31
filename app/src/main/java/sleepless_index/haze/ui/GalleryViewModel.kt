@@ -65,6 +65,8 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     val prefs: StateFlow<Prefs> =
         g.settings.flow.stateIn(viewModelScope, SharingStarted.Eagerly, Prefs())
 
+    val updater = sleepless_index.haze.data.Updater(app, viewModelScope)
+
     fun setPlayerOrientation(v: Int) = viewModelScope.launch { g.settings.setPlayerOrientation(v) }
     fun setTrashDays(v: Int) = viewModelScope.launch { g.settings.setTrashDays(v) }
     fun setLayout(v: LayoutMode) = viewModelScope.launch { g.settings.setLayout(v) }

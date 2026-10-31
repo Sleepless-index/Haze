@@ -156,7 +156,7 @@ private fun MasonryPreview() {
 }
 
 @Composable
-private fun CardGroup(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun CardGroup(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val cs = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(18.dp)
     Column(
@@ -582,6 +582,8 @@ fun SettingsScreen(vm: GalleryViewModel, onBack: () -> Unit, onOpenPermissions: 
                     Icon(GIcons.ChevronRight, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp))
                 }
             }
+
+            UpdatesSection(vm)
         }
     }
 
