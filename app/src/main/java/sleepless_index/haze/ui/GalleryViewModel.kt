@@ -406,21 +406,6 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
         pendingIds = emptyList()
     }
 
-    fun setWallpaper(item: MediaItem, which: Int) {
-        viewModelScope.launch {
-            setBusy("Setting wallpaper", blocking = true)
-            val ok = try { sleepless_index.haze.data.WallpaperOps.set(getApplication(), item, which) } finally { _busy.value = null }
-            message(
-                if (!ok) "Couldn't set the wallpaper"
-                else when (which) {
-                    sleepless_index.haze.data.WallpaperOps.HOME -> "Home screen wallpaper set"
-                    sleepless_index.haze.data.WallpaperOps.LOCK -> "Lock screen wallpaper set"
-                    else -> "Wallpaper set on home and lock screens"
-                },
-            )
-        }
-    }
-
     fun countText(n: Int) = if (n == 1) "1 item" else "$n items"
 
     // ---- copy / move to album --------------------------------------------

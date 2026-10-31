@@ -136,7 +136,6 @@ fun ViewerScreen(
     var showInfo by remember { mutableStateOf(false) }
     var confirmTrash by remember { mutableStateOf(false) }
     var confirmVault by remember { mutableStateOf(false) }
-    var wallpaperSheet by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
     // null = closed, false = copy to album, true = move to album
     var picker by remember { mutableStateOf<Boolean?>(null) }
@@ -243,7 +242,7 @@ fun ViewerScreen(
                                     text = { Text("Set as wallpaper") },
                                     onClick = {
                                         menu = false
-                                        wallpaperSheet = true
+                                        setAsWallpaper(context, current)
                                     },
                                 )
                                 CompactMenuItem(
@@ -371,7 +370,6 @@ fun ViewerScreen(
             onDismiss = { confirmVault = false },
         )
     }
-    if (wallpaperSheet) WallpaperSheet(vm, current, onDismiss = { wallpaperSheet = false })
     picker?.let { move ->
         AlbumPickerSheet(vm = vm, items = listOf(current), move = move, onDismiss = { picker = null })
     }
@@ -380,6 +378,25 @@ fun ViewerScreen(
 private fun attachIntent(item: MediaItem) = android.content.Intent(android.content.Intent.ACTION_ATTACH_DATA)
     .setDataAndType(item.uri, item.mime.ifBlank { "image/*" })
     .addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+/**
+ * Hands the photo to the phone's own wallpaper screen, which is the one that knows how to set the
+ * home and lock screens on this device. Falls back to the "Set as" list without the Contacts entry.
+ */
+private fun setAsWallpaper(context: Context, item: MediaItem) {
+    val crop = runCatching {
+        android.app.WallpaperManager.getInstance(context).getCropAndSetWallpaperIntent(item.uri)
+            .addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }.getOrNull()
+    if (crop != null && runCatching { context.startActivity(crop) }.isSuccess) return
+    val intent = attachIntent(item)
+    val contacts = context.packageManager.queryIntentActivities(intent, 0)
+        .filter { it.activityInfo.packageName.contains("contact", ignoreCase = true) }
+        .map { android.content.ComponentName(it.activityInfo.packageName, it.activityInfo.name) }
+    val chooser = android.content.Intent.createChooser(intent, "Set as wallpaper")
+    if (contacts.isNotEmpty()) chooser.putExtra(android.content.Intent.EXTRA_EXCLUDE_COMPONENTS, contacts.toTypedArray())
+    runCatching { context.startActivity(chooser) }
+}
 
 /** Sends the photo to a Contacts app to use as a contact photo; falls back to the generic chooser. */
 private fun setAsContactPhoto(context: Context, item: MediaItem) {
