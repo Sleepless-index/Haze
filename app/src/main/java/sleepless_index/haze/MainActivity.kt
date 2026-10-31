@@ -155,12 +155,36 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    private var allFilesWatch: kotlinx.coroutines.Job? = null
+
     private fun openAllFilesSettings() {
-        runCatching {
+        val opened = runCatching {
             startActivity(
                 Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
                     .setData(Uri.parse("package:$packageName"))
             )
+        }.isSuccess
+        if (opened && Build.VERSION.SDK_INT >= 30) watchAllFiles()
+    }
+
+    /** Once the user flips the switch, bring Haze back to the front so they don't have to press back. */
+    private fun watchAllFiles() {
+        allFilesWatch?.cancel()
+        allFilesWatch = lifecycleScope.launch {
+            var waited = 0L
+            while (waited < 120_000L && !Environment.isExternalStorageManager()) {
+                kotlinx.coroutines.delay(300)
+                waited += 300
+            }
+            if (Environment.isExternalStorageManager()) {
+                runCatching {
+                    startActivity(
+                        Intent(this@MainActivity, MainActivity::class.java)
+                            .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    )
+                }
+                updatePermission()
+            }
         }
     }
 
