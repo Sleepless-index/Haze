@@ -135,6 +135,9 @@ object GIcons {
     val Folder: ImageVector by lazy {
         IconBuilder("Folder").s("M 3.5 7.5 a 2 2 0 0 1 2 -2 H 10 l 2 2.5 h 6.5 a 2 2 0 0 1 2 2 V 17 a 2 2 0 0 1 -2 2 h -13 a 2 2 0 0 1 -2 -2 z").build()
     }
+    val Storage: ImageVector by lazy {
+        IconBuilder("Storage").s("M 4 14 h 16 v 5 H 4 z M 4 14 l 2.5 -8 h 11 L 20 14").s(circle(17f, 16.5f, 0.6f)).build()
+    }
     val Sparkle: ImageVector by lazy {
         IconBuilder("Sparkle").s("M 12 3 l 1.8 5.2 L 19 10 l -5.2 1.8 L 12 17 l -1.8 -5.2 L 5 10 l 5.2 -1.8 z M 18 16 l 0.8 2.2 L 21 19 l -2.2 0.8 L 18 22 l -0.8 -2.2 L 15 19 l 2.2 -0.8 z").build()
     }

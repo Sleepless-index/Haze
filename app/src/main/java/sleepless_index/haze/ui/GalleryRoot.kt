@@ -153,7 +153,7 @@ fun GalleryRoot(
                     vm = vm,
                     onBack = { nav.popBackStack() },
                     onOpen = openViewer,
-                    onOpenCleanup = { nav.navigate("cleanup") },
+                    onOpenAlbum = { id -> nav.navigate("album/$id") },
                 )
             }
 

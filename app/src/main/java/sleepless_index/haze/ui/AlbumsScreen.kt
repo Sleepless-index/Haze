@@ -92,8 +92,8 @@ private fun SmartTile(icon: ImageVector, title: String, count: String, tint: Col
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = cs.onBackground)
-            Text(count, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = cs.onSurfaceVariant)
+            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = cs.onBackground, maxLines = 1)
+            Text(count, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = cs.onSurfaceVariant, maxLines = 1)
         }
     }
 }
@@ -336,19 +336,19 @@ fun AlbumsScreen(
                     SmartTile(GIcons.Lock, "Vault", "", cs.onBackground, onOpenVault)
                 }
             }
-            item(key = "smart_cleanup", span = { GridItemSpan(maxLineSpan) }) {
-                StaggerIn(3) {
+            item(key = "smart_cleanup") {
+                StaggerIn(4) {
                     SmartTile(
                         GIcons.Sparkle, "Clean up",
-                        if (cleanup.scanned && cleanup.freeableBytes > 0) "${sleepless_index.haze.data.formatSize(cleanup.freeableBytes)} to free" else "",
+                        if (cleanup.scanned && cleanup.freeableBytes > 0) sleepless_index.haze.data.formatSize(cleanup.freeableBytes) else "",
                         cs.onBackground, onOpenCleanup,
                     )
                 }
             }
-            item(key = "smart_storage", span = { GridItemSpan(maxLineSpan) }) {
-                StaggerIn(4) {
+            item(key = "smart_storage") {
+                StaggerIn(5) {
                     SmartTile(
-                        GIcons.Folder, "Storage",
+                        GIcons.Storage, "Storage",
                         sleepless_index.haze.data.formatSize(sizes.values.sum()),
                         cs.onBackground, onOpenStorage,
                     )
