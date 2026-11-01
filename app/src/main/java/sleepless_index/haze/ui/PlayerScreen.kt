@@ -549,6 +549,23 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
         hud = Hud(GIcons.Timer, if (timerMin > 0) "Sleep in $timerMin min" else "Timer off")
     }
 
+    fun stepFrame(dir: Int) {
+        val fps = player.videoFormat?.frameRate?.takeIf { it > 0f } ?: 30f
+        val step = (1000f / fps).toLong().coerceAtLeast(1L)
+        player.setSeekParameters(androidx.media3.exoplayer.SeekParameters.EXACT)
+        player.seekTo((player.currentPosition + dir * step).coerceAtLeast(0L))
+    }
+
+    fun saveFrame() {
+        val at = player.currentPosition
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                sleepless_index.haze.data.FrameOps.save(context, item.uri, at, item.name)
+            }
+            hud = Hud(GIcons.Camera, if (ok) "Frame saved to Pictures/Haze" else "Couldn't save the frame")
+        }
+    }
+
     fun togglePlay() {
         if (player.isPlaying) {
             player.pause()
@@ -1304,6 +1321,20 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                         player.seekToNextMediaItem()
                         player.play()
                         interaction++
+                    }
+                }
+
+                // frame tools, only while paused
+                AnimatedVisibility(
+                    visible = showControls && !isPlaying,
+                    modifier = Modifier.align(Alignment.Center).padding(top = 170.dp),
+                    enter = fadeIn(tween(180)),
+                    exit = fadeOut(tween(120)),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        PlayerChip("‹ Frame", null) { stepFrame(-1); interaction++ }
+                        PlayerChip("Save frame", GIcons.Camera, accent = true) { saveFrame(); interaction++ }
+                        PlayerChip("Frame ›", null) { stepFrame(1); interaction++ }
                     }
                 }
 

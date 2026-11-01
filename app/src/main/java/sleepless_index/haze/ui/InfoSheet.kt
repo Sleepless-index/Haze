@@ -288,7 +288,18 @@ fun InfoSheet(
             // Location
             info.latLong?.let { ll ->
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cardBg)) {
-                    MapPlaceholder()
+                    Box(
+                        Modifier.bounceClick(onClick = {
+                            runCatching {
+                                context.startActivity(
+                                    android.content.Intent(
+                                        android.content.Intent.ACTION_VIEW,
+                                        android.net.Uri.parse("geo:${ll[0]},${ll[1]}?q=${ll[0]},${ll[1]}"),
+                                    )
+                                )
+                            }
+                        })
+                    ) { MapPlaceholder() }
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -296,7 +307,7 @@ fun InfoSheet(
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text("Location", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
                             Text(
-                                "%.5f, %.5f".format(ll[0], ll[1]),
+                                "%.5f, %.5f  ·  tap the map to open it".format(ll[0], ll[1]),
                                 fontSize = 12.5.sp, fontFamily = FontFamily.Monospace, color = cs.onSurfaceVariant,
                             )
                         }

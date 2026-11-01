@@ -241,6 +241,7 @@ fun AlbumsScreen(
     onOpenSettings: () -> Unit,
     onOpenVault: () -> Unit,
     onOpenCleanup: () -> Unit,
+    onOpenStorage: () -> Unit = {},
 ) {
     var menu by remember { mutableStateOf(false) }
     val albums by vm.albums.collectAsStateWithLifecycle()
@@ -341,6 +342,15 @@ fun AlbumsScreen(
                         GIcons.Sparkle, "Clean up",
                         if (cleanup.scanned && cleanup.freeableBytes > 0) "${sleepless_index.haze.data.formatSize(cleanup.freeableBytes)} to free" else "",
                         cs.onBackground, onOpenCleanup,
+                    )
+                }
+            }
+            item(key = "smart_storage", span = { GridItemSpan(maxLineSpan) }) {
+                StaggerIn(4) {
+                    SmartTile(
+                        GIcons.Folder, "Storage",
+                        sleepless_index.haze.data.formatSize(sizes.values.sum()),
+                        cs.onBackground, onOpenStorage,
                     )
                 }
             }

@@ -119,6 +119,7 @@ fun GalleryRoot(
                     onOpenSettings = { nav.navigate("settings") },
                     onOpenVault = { nav.navigate("vault") },
                     onOpenCleanup = { nav.navigate("cleanup") },
+                    onOpenStorage = { nav.navigate("storage") },
                 )
             }
             composable("search") { SearchScreen(vm, onOpen = openViewer) }
@@ -140,6 +141,19 @@ fun GalleryRoot(
                     onRequestMedia = onRequestMedia,
                     onRequestAllFiles = onRequestAllFiles,
                     onBack = { nav.popBackStack() },
+                )
+            }
+
+            composable(
+                route = "storage",
+                enterTransition = { slideInHorizontally(tween(300)) { it / 5 } + fadeIn(tween(300)) },
+                popExitTransition = { slideOutHorizontally(tween(260)) { it / 5 } + fadeOut(tween(220)) },
+            ) {
+                StorageScreen(
+                    vm = vm,
+                    onBack = { nav.popBackStack() },
+                    onOpen = openViewer,
+                    onOpenCleanup = { nav.navigate("cleanup") },
                 )
             }
 

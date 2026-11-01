@@ -87,6 +87,9 @@ class MainActivity : FragmentActivity() {
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
 
+    /** What we ask for: media access, plus the right to read where a photo was taken. Only media gates the app. */
+    private fun mediaRequest(): Array<String> = mediaPermissions() + Manifest.permission.ACCESS_MEDIA_LOCATION
+
     private fun hasMediaPermission(): Boolean =
         mediaPermissions().all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
@@ -148,7 +151,7 @@ class MainActivity : FragmentActivity() {
     private fun grantAll() {
         chainAllFiles = !perms.value.allFiles
         if (!perms.value.media) {
-            permissionLauncher.launch(mediaPermissions())
+            permissionLauncher.launch(mediaRequest())
         } else {
             chainAllFiles = false
             if (!perms.value.allFiles) openAllFilesSettings()
@@ -208,7 +211,7 @@ class MainActivity : FragmentActivity() {
                     vm = vm,
                     perms = perms.value,
                     onGrantAll = { grantAll() },
-                    onRequestMedia = { permissionLauncher.launch(mediaPermissions()) },
+                    onRequestMedia = { permissionLauncher.launch(mediaRequest()) },
                     onRequestAllFiles = { openAllFilesSettings() },
                     onSecure = { secure ->
                         if (secure) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
