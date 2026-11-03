@@ -508,7 +508,11 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
             if (stored.isEmpty()) {
                 message("Couldn't move those files to the Vault")
             } else {
-                message("Moved ${stored.size} to the Vault. Confirm to remove the originals.")
+                // With All files access the originals are removed right away, with no prompt to wait for.
+                message(
+                    if (sleepless_index.haze.data.MediaOps.hasAllFiles()) "Moved ${stored.size} to the Vault"
+                    else "Moved ${stored.size} to the Vault. Confirm to remove the originals."
+                )
                 // Permanently remove the originals so they don't linger in the gallery or trash.
                 requestDeleteForever(stored)
             }

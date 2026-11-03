@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -113,7 +114,7 @@ private fun PinPad(resetKey: Int, length: Int?, onSubmit: (String) -> Unit, onTo
             }
         }
         val last = if (length == null) "OK" else ""
-        val rows = listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf("⌫", "0", last))
+        val rows = listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf(last, "0", "⌫"))
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
                 row.forEach { key ->
@@ -317,9 +318,26 @@ fun LockSetup(title: String, onDone: (type: String, secret: String) -> Unit, onC
         lowered = t == VaultLockStore.PIN || t == VaultLockStore.PATTERN,
     ) {
         if (t == null) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 4.dp)) {
-                listOf(VaultLockStore.PIN to "PIN", VaultLockStore.PATTERN to "Pattern", VaultLockStore.PASSWORD to "Password").forEach { (k, label) ->
-                    sleepless_index.haze.editor.Chip(label, false) { type = k }
+            val cs = MaterialTheme.colorScheme
+            Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf(
+                    Triple(VaultLockStore.PIN, "PIN", sleepless_index.haze.ui.theme.GIcons.PinPad),
+                    Triple(VaultLockStore.PATTERN, "Pattern", sleepless_index.haze.ui.theme.GIcons.PatternDots),
+                    Triple(VaultLockStore.PASSWORD, "Password", sleepless_index.haze.ui.theme.GIcons.PasswordStars),
+                ).forEach { (k, label, icon) ->
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .height(92.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(cs.surfaceVariant.copy(alpha = 0.7f))
+                            .bounceClick(onClick = { type = k }),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                    ) {
+                        androidx.compose.material3.Icon(icon, null, tint = cs.primary, modifier = Modifier.size(28.dp))
+                        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onBackground)
+                    }
                 }
             }
         } else {

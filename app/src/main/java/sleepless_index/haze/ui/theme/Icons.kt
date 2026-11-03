@@ -135,6 +135,20 @@ object GIcons {
     val Folder: ImageVector by lazy {
         IconBuilder("Folder").s("M 3.5 7.5 a 2 2 0 0 1 2 -2 H 10 l 2 2.5 h 6.5 a 2 2 0 0 1 2 2 V 17 a 2 2 0 0 1 -2 2 h -13 a 2 2 0 0 1 -2 -2 z").build()
     }
+    val PinPad: ImageVector by lazy {
+        val dots = listOf(7f, 12f, 17f).flatMap { x -> listOf(5f, 10f, 15f, 20f).map { y -> circle(x, y, 1.1f) } }
+        IconBuilder("PinPad").s(dots.joinToString(" ")).build()
+    }
+    val PatternDots: ImageVector by lazy {
+        val dots = listOf(6f, 12f, 18f).flatMap { x -> listOf(6f, 12f, 18f).map { y -> circle(x, y, 1.3f) } }
+        IconBuilder("PatternDots").s(dots.joinToString(" ")).s("M 6 6 L 12 12 L 18 12 L 18 18").build()
+    }
+    val PasswordStars: ImageVector by lazy {
+        IconBuilder("PasswordStars")
+            .s(listOf(5f, 10f, 15f).joinToString(" ") { circle(it, 12f, 1.3f) })
+            .s("M 20 8 v 8")
+            .build()
+    }
     val Storage: ImageVector by lazy {
         IconBuilder("Storage").s("M 4 14 h 16 v 5 H 4 z M 4 14 l 2.5 -8 h 11 L 20 14").s(circle(17f, 16.5f, 0.6f)).build()
     }

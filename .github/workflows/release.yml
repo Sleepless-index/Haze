@@ -4,12 +4,30 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      remove_tag:
+        description: "Delete this release and its tag (for example v0.3.0) and stop, without building"
+        required: false
+        default: ''
 
 permissions:
   contents: write
 
 jobs:
+  remove:
+    if: github.event_name == 'workflow_dispatch' && inputs.remove_tag != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the release and its tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.remove_tag }}
+        run: |
+          [[ "$TAG" =~ ^v[0-9][0-9A-Za-z.\-]*$ ]] || { echo "::error::'$TAG' doesn't look like a version tag"; exit 1; }
+          gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+
   release:
+    if: github.event_name != 'workflow_dispatch' || inputs.remove_tag == ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,9 +69,18 @@ jobs:
           name: gallery-signed-apk
           path: haze-*.apk
 
+      # Started by hand: replace any release that already uses this version, so the tag moves to this build.
+      - name: Replace an existing release with the same tag
+        if: github.ref_type != 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          target_commitish: ${{ github.sha }}
           tag_name: ${{ steps.ver.outputs.tag }}
           name: Haze ${{ steps.ver.outputs.tag }}
           files: haze-*.apk
