@@ -33,6 +33,7 @@ class GalleryApp : Application(), ImageLoaderFactory {
         return ImageLoader.Builder(this)
             .components {
                 add(sleepless_index.haze.data.MediaThumbFetcher.Factory(app))
+                add(sleepless_index.haze.data.VaultVideoFrameFetcher.Factory(app))
                 add(VideoFrameDecoder.Factory())
                 add(ImageDecoderDecoder.Factory())
             }

@@ -62,3 +62,51 @@ fun thumbRequest(context: Context, uri: Uri, px: Int, video: Boolean = false): I
             if (video) setParameter("thumb", true)
         }
         .build()
+
+/**
+ * Vault files are stored under random names with no extension, so Coil can't tell a video from
+ * a photo and never decodes a frame. This reads the frame itself, and steps aside (returns null)
+ * for anything that isn't a video.
+ */
+class VaultVideoFrameFetcher(
+    private val context: Context,
+    private val uri: Uri,
+    private val options: Options,
+) : Fetcher {
+
+    override suspend fun fetch(): FetchResult? = withContext(Dispatchers.IO) {
+        val path = uri.path ?: return@withContext null
+        val w = options.size.width.pxOrElse { 512 }.coerceAtLeast(64)
+        val h = options.size.height.pxOrElse { 512 }.coerceAtLeast(64)
+        val retriever = android.media.MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(path)
+            if (retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO) != "yes") {
+                return@withContext null
+            }
+            val durMs = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+            val atUs = minOf(durMs / 2, 1000L) * 1000L
+            val frame = retriever.getScaledFrameAtTime(
+                atUs, android.media.MediaMetadataRetriever.OPTION_CLOSEST_SYNC, w, h,
+            ) ?: return@withContext null
+            DrawableResult(
+                drawable = BitmapDrawable(context.resources, frame),
+                isSampled = true,
+                dataSource = DataSource.DISK,
+            )
+        } catch (e: Exception) {
+            null
+        } finally {
+            runCatching { retriever.release() }
+        }
+    }
+
+    class Factory(private val context: Context) : Fetcher.Factory<Uri> {
+        override fun create(data: Uri, options: Options, imageLoader: ImageLoader): Fetcher? {
+            if (data.scheme != "file") return null
+            val name = data.lastPathSegment ?: return null
+            if (name.contains('.')) return null
+            return VaultVideoFrameFetcher(context, data, options)
+        }
+    }
+}

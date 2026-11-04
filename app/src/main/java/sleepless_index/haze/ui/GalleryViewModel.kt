@@ -333,8 +333,49 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     private val _viewerList = MutableStateFlow<List<MediaItem>>(emptyList())
     val viewerList: StateFlow<List<MediaItem>> = _viewerList
 
+    /** Which library items belong in the open viewer's list, when that can be worked out (null = fixed list). */
+    private var viewerScope: ((MediaItem) -> Boolean)? = null
+
     fun setViewerList(list: List<MediaItem>) {
         _viewerList.value = list
+        viewerScope = inferViewerScope(list)
+    }
+
+    /** Recognises lists that are "everything", "all videos", "all photos" or "one album", so new files can join them. */
+    private fun inferViewerScope(list: List<MediaItem>): ((MediaItem) -> Boolean)? {
+        if (list.isEmpty() || list.any { it.id < 0 }) return null
+        val lib = items.value
+        val ids = list.mapTo(HashSet()) { it.id }
+        val bucket = list[0].bucketId
+        val candidates = listOf<(MediaItem) -> Boolean>(
+            { true },
+            { it.isVideo },
+            { !it.isVideo },
+            { it.bucketId == bucket },
+        )
+        return candidates.firstOrNull { p -> lib.count(p) == ids.size && lib.all { !p(it) || it.id in ids } }
+    }
+
+    init {
+        // A photo downloaded while the viewer is open joins the list, so there's no need to leave and come back.
+        viewModelScope.launch {
+            items.collect { lib ->
+                val scope = viewerScope ?: return@collect
+                val cur = _viewerList.value
+                if (cur.isEmpty()) return@collect
+                val present = lib.mapTo(HashSet()) { it.id }
+                val have = cur.mapTo(HashSet()) { it.id }
+                val kept = cur.filter { it.id in present }
+                val fresh = lib.filter { scope(it) && it.id !in have }
+                if (fresh.isEmpty() && kept.size == cur.size) return@collect
+                val out = kept.toMutableList()
+                for (m in fresh) {
+                    val at = out.indexOfFirst { it.dateMs <= m.dateMs }
+                    if (at < 0) out.add(m) else out.add(at, m)
+                }
+                _viewerList.value = out
+            }
+        }
     }
 
     fun findItem(id: Long): MediaItem? =
