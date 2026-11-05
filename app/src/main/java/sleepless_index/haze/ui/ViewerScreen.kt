@@ -133,6 +133,8 @@ fun ViewerScreen(
 
     val pagerState = rememberPagerState(initialPage = startIndex.coerceIn(0, list.lastIndex)) { list.size }
     var chrome by remember { mutableStateOf(true) }
+    // Set while the bars are hidden only because the picture is zoomed in; they come back when it's zoomed out.
+    var autoHidden by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
     var confirmTrash by remember { mutableStateOf(false) }
     var confirmVault by remember { mutableStateOf(false) }
@@ -151,8 +153,8 @@ fun ViewerScreen(
     val topBarH = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 64.dp
     val bottomBarH = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 14.dp + 56.dp + 10.dp +
         (if (list.size > 1) 88.dp else 0.dp)
-    val insetTop by animateDpAsState(if (chrome) topBarH else 0.dp, tween(220), label = "insetTop")
-    val insetBottom by animateDpAsState(if (chrome) bottomBarH else 0.dp, tween(220), label = "insetBottom")
+    val insetTop by animateDpAsState(if (chrome || autoHidden) topBarH else 0.dp, tween(220), label = "insetTop")
+    val insetBottom by animateDpAsState(if (chrome || autoHidden) bottomBarH else 0.dp, tween(220), label = "insetBottom")
 
     val blurOn = vm.prefs.collectAsStateWithLifecycle().value.blur
     val blurDp by animateDpAsState(if (showInfo && blurOn) 28.dp else 0.dp, tween(260), label = "infoBlur")
@@ -186,7 +188,16 @@ fun ViewerScreen(
             } else {
                 ZoomableImage(
                     item = item,
-                    onTap = { chrome = !chrome },
+                    onTap = { chrome = !chrome; autoHidden = false },
+                    onZoomChange = { zoomed ->
+                        if (zoomed && chrome) {
+                            chrome = false
+                            autoHidden = true
+                        } else if (!zoomed && autoHidden) {
+                            chrome = true
+                            autoHidden = false
+                        }
+                    },
                     insetTop = insetTop,
                     insetBottom = insetBottom,
                     onSwipeDown = onBack,
@@ -480,9 +491,18 @@ internal fun ZoomableImage(
     insetBottom: Dp,
     onTap: () -> Unit,
     onSwipeDown: () -> Unit,
+    onZoomChange: (Boolean) -> Unit = {},
 ) {
     val ctx = LocalContext.current
     var scale by remember { mutableFloatStateOf(1f) }
+    val zoomedIn = scale > 1.05f
+    var wasZoomed by remember { mutableStateOf(false) }
+    LaunchedEffect(zoomedIn) {
+        if (zoomedIn != wasZoomed) {
+            wasZoomed = zoomedIn
+            onZoomChange(zoomedIn)
+        }
+    }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var box by remember { mutableStateOf(IntSize.Zero) }
     var rotation by remember { mutableFloatStateOf(0f) }
