@@ -35,6 +35,10 @@ data class Prefs(
     val playerOrientation: Int = 0,
     val pinned: Set<Long> = emptySet(),
     val hidden: Set<Long> = emptySet(),
+    /** Folders hidden from every app with a .nomedia file, each as "bucketId|folder path|album name". */
+    val hiddenFolders: Set<String> = emptySet(),
+    /** Custom album covers, each as "bucketId:itemId". */
+    val covers: Set<String> = emptySet(),
     val vaultLock: String = "",
     val stripLocation: Boolean = true,
 ) {
@@ -66,6 +70,8 @@ class SettingsStore(private val context: Context) {
     private val kPlayerOrientation = intPreferencesKey("playerOrientation")
     private val kPinned = stringSetPreferencesKey("pinnedAlbums")
     private val kHidden = stringSetPreferencesKey("hiddenAlbums")
+    private val kHiddenFolders = stringSetPreferencesKey("hiddenFolders")
+    private val kCovers = stringSetPreferencesKey("albumCovers")
     private val kVaultLock = stringPreferencesKey("vaultLock")
     private val kStripLocation = booleanPreferencesKey("stripLocation")
 
@@ -86,6 +92,8 @@ class SettingsStore(private val context: Context) {
             playerOrientation = p[kPlayerOrientation] ?: 0,
             pinned = (p[kPinned] ?: emptySet()).mapNotNull { it.toLongOrNull() }.toSet(),
             hidden = (p[kHidden] ?: emptySet()).mapNotNull { it.toLongOrNull() }.toSet(),
+            hiddenFolders = p[kHiddenFolders] ?: emptySet(),
+            covers = p[kCovers] ?: emptySet(),
             vaultLock = p[kVaultLock] ?: "",
             stripLocation = p[kStripLocation] ?: true,
         )
@@ -120,6 +128,20 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { p ->
             val cur = p[kHidden] ?: emptySet()
             p[kHidden] = if (on) cur + id.toString() else cur - id.toString()
+        }
+    }
+
+    suspend fun setHiddenFolder(entry: String, bucketId: Long, on: Boolean) {
+        context.dataStore.edit { p ->
+            val cur = (p[kHiddenFolders] ?: emptySet()).filterNot { it.startsWith("$bucketId|") }.toSet()
+            p[kHiddenFolders] = if (on) cur + entry else cur
+        }
+    }
+
+    suspend fun setCover(bucketId: Long, itemId: Long?) {
+        context.dataStore.edit { p ->
+            val cur = (p[kCovers] ?: emptySet()).filterNot { it.startsWith("$bucketId:") }.toSet()
+            p[kCovers] = if (itemId != null) cur + "$bucketId:$itemId" else cur
         }
     }
 }

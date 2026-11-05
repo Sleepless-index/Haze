@@ -242,6 +242,7 @@ fun AlbumsScreen(
     onOpenVault: () -> Unit,
     onOpenCleanup: () -> Unit,
     onOpenStorage: () -> Unit = {},
+    onPickCover: (Long) -> Unit = {},
 ) {
     var menu by remember { mutableStateOf(false) }
     val albums by vm.albums.collectAsStateWithLifecycle()
@@ -273,6 +274,7 @@ fun AlbumsScreen(
     var actionAlbum by remember { mutableStateOf<sleepless_index.haze.data.Album?>(null) }
     var renaming by remember { mutableStateOf<sleepless_index.haze.data.Album?>(null) }
     var deleting by remember { mutableStateOf<sleepless_index.haze.data.Album?>(null) }
+    var hiding by remember { mutableStateOf<sleepless_index.haze.data.Album?>(null) }
     val cs = MaterialTheme.colorScheme
     val ctx = LocalContext.current
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -437,15 +439,27 @@ fun AlbumsScreen(
 
     actionAlbum?.let { a ->
         val isHidden = a.bucketId in prefs.hidden
-        AlbumActionsDialog(
+        AlbumActionsSheet(
             album = a,
+            bytes = sizes[a.bucketId],
             pinned = a.bucketId in prefs.pinned,
             hidden = isHidden,
             onDismiss = { actionAlbum = null },
             onPin = { vm.togglePin(a); actionAlbum = null },
+            onCover = { onPickCover(a.bucketId); actionAlbum = null },
             onRename = { renaming = a; actionAlbum = null },
-            onHide = { vm.setHidden(a, !isHidden); actionAlbum = null },
+            onHide = {
+                actionAlbum = null
+                if (isHidden) vm.setHidden(a, false) else hiding = a
+            },
             onDelete = { deleting = a; actionAlbum = null },
+        )
+    }
+    hiding?.let { a ->
+        HideAlbumSheet(
+            album = a,
+            onConfirm = { vm.setHidden(a, true); hiding = null },
+            onDismiss = { hiding = null },
         )
     }
     renaming?.let { a ->

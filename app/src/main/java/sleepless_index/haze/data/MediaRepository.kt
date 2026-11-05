@@ -31,8 +31,22 @@ class MediaRepository(private val context: Context) {
     private var observer: ContentObserver? = null
     private var debounceJob: Job? = null
 
+    /** Folders hidden with a .nomedia file; read from disk because the media library no longer lists them. */
+    @Volatile
+    var hiddenFolders: Set<String> = emptySet()
+
     suspend fun refresh() {
-        val list = withContext(Dispatchers.IO) { query(trashed = false) }
+        val list = withContext(Dispatchers.IO) {
+            val base = query(trashed = false)
+            val hidden = hiddenFolders
+            if (hidden.isEmpty()) {
+                base
+            } else {
+                val have = base.mapTo(HashSet()) { it.bucketId to it.name }
+                (base + HiddenFolders.load(context, hidden).filter { (it.bucketId to it.name) !in have })
+                    .sortedByDescending { it.dateMs }
+            }
+        }
         _items.value = list
         _loaded.value = true
     }

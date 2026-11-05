@@ -19,7 +19,7 @@ object MediaOps {
     fun hasAllFiles(): Boolean = Build.VERSION.SDK_INT >= 30 && Environment.isExternalStorageManager()
 
     fun pathOf(context: Context, uri: Uri): String? =
-        runCatching {
+        if (uri.scheme == "file") uri.path?.takeIf { !it.startsWith(context.filesDir.absolutePath) } else runCatching {
             context.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.DATA), null, null, null)?.use {
                 if (it.moveToFirst()) it.getString(0) else null
             }

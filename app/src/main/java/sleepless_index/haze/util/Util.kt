@@ -20,6 +20,13 @@ fun shareItems(context: Context, items: List<MediaItem>, stripLocation: Boolean 
     // Photos that carry a location are shared as a cleaned copy; everything else goes out as is.
     Thread {
         val uris = items.map { m ->
+            if (m.uri.scheme == "file" && m.id >= 0) {
+                // Files from an album hidden from other apps live outside the media library: share a copy.
+                val src = java.io.File(m.uri.path ?: return@map m.uri)
+                val dest = java.io.File(context.cacheDir, "share").apply { mkdirs() }.resolve(src.name)
+                runCatching { src.copyTo(dest, overwrite = true) }
+                return@map androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".share", dest)
+            }
             if (!stripLocation || m.isVideo || m.id < 0) return@map m.uri
             if (!sleepless_index.haze.data.MetaOps.hasGps(context, m.uri)) return@map m.uri
             val f = sleepless_index.haze.data.MetaOps.strippedCopy(context, m.uri, m.name) ?: return@map m.uri

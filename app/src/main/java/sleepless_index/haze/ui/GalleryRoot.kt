@@ -120,6 +120,7 @@ fun GalleryRoot(
                     onOpenVault = { nav.navigate("vault") },
                     onOpenCleanup = { nav.navigate("cleanup") },
                     onOpenStorage = { nav.navigate("storage") },
+                    onPickCover = { id -> nav.navigate("cover/$id") },
                 )
             }
             composable("search") { SearchScreen(vm, onOpen = openViewer) }
@@ -193,6 +194,19 @@ fun GalleryRoot(
                     onOpen = openViewer,
                 )
             }
+            composable(
+                route = "cover/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.LongType }),
+                enterTransition = { slideInHorizontally(tween(300)) { it / 5 } + fadeIn(tween(300)) },
+                popExitTransition = { slideOutHorizontally(tween(260)) { it / 5 } + fadeOut(tween(220)) },
+            ) { backStackEntry ->
+                CoverPickerScreen(
+                    vm = vm,
+                    bucketId = backStackEntry.arguments?.getLong("id") ?: 0L,
+                    onBack = { nav.popBackStack() },
+                )
+            }
+
             composable(
                 route = "album/{id}",
                 arguments = listOf(navArgument("id") { type = NavType.LongType }),

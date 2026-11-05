@@ -2,6 +2,10 @@ package sleepless_index.haze.ui
 
 import android.app.Application
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import java.io.File
+import sleepless_index.haze.data.HiddenFolders
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import sleepless_index.haze.GalleryApp
@@ -101,16 +105,51 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /** Swaps in the cover the user picked, when that photo is still in the album. */
+    private fun withCovers(albums: List<Album>, list: List<MediaItem>, covers: Set<String>): List<Album> {
+        if (covers.isEmpty()) return albums
+        val picked = covers.mapNotNull { c ->
+            val p = c.split(":")
+            if (p.size == 2) p[0].toLongOrNull()?.let { b -> p[1].toLongOrNull()?.let { i -> b to i } } else null
+        }.toMap()
+        return albums.map { a ->
+            val id = picked[a.bucketId] ?: return@map a
+            val m = list.firstOrNull { it.id == id && it.bucketId == a.bucketId }
+            if (m != null) a.copy(cover = m) else a
+        }
+    }
+
+    init {
+        // Folders hidden with a .nomedia file are read from disk, so the repository needs to know about them.
+        viewModelScope.launch {
+            prefs.map { it.hiddenFolders }.distinctUntilChanged().collect { folders ->
+                repo.hiddenFolders = folders
+                if (folders.isNotEmpty()) repo.refresh()
+            }
+        }
+    }
+
     /** Visible albums with pinned ones first. */
-    val albums: StateFlow<List<Album>> = combine(items, prefs.map { it.pinned }.distinctUntilChanged()) { list, pinned ->
-        val all = buildAlbums(list)
+    val albums: StateFlow<List<Album>> = combine(
+        items,
+        prefs.map { it.pinned }.distinctUntilChanged(),
+        prefs.map { it.covers }.distinctUntilChanged(),
+    ) { list, pinned, covers ->
+        val all = withCovers(buildAlbums(list), list, covers)
         all.filter { it.bucketId in pinned } + all.filter { it.bucketId !in pinned }
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    val hiddenAlbums: StateFlow<List<Album>> = combine(repo.items, prefs.map { it.hidden }.distinctUntilChanged()) { list, hidden ->
-        if (hidden.isEmpty()) emptyList() else buildAlbums(list.filter { it.bucketId in hidden })
+    val hiddenAlbums: StateFlow<List<Album>> = combine(
+        repo.items,
+        prefs.map { it.hidden }.distinctUntilChanged(),
+        prefs.map { it.covers }.distinctUntilChanged(),
+    ) { list, hidden, covers ->
+        if (hidden.isEmpty()) emptyList() else {
+            val inHidden = list.filter { it.bucketId in hidden }
+            withCovers(buildAlbums(inHidden), inHidden, covers)
+        }
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -231,9 +270,77 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { g.settings.setPinned(album.bucketId, album.bucketId !in prefs.value.pinned) }
     }
 
+    /**
+     * Hiding adds a .nomedia file to the album's folder, so other apps (Discord, other galleries, photo
+     * pickers) stop seeing it too. Folders that hold other albums, or that can't be changed, are hidden in Haze only.
+     */
     fun setHidden(album: Album, hidden: Boolean) {
-        viewModelScope.launch { g.settings.setHidden(album.bucketId, hidden) }
-        message(if (hidden) "Hid \"${album.name}\" — find it under Hidden albums" else "\"${album.name}\" is visible again")
+        viewModelScope.launch {
+            val app = getApplication<Application>()
+            if (hidden) {
+                val dir = MediaOps.albumAbsDir(app, album)?.let { File(it) }
+                var everywhere = false
+                if (dir != null && MediaOps.hasAllFiles() && dir.isDirectory) {
+                    everywhere = withContext(Dispatchers.IO) {
+                        if (HiddenFolders.hasSubAlbums(dir)) false
+                        else runCatching { File(dir, ".nomedia").let { it.exists() || it.createNewFile() } }.getOrDefault(false)
+                    }
+                }
+                if (everywhere && dir != null) {
+                    g.settings.setHiddenFolder(HiddenFolders.entry(album.bucketId, dir.absolutePath, album.name), album.bucketId, true)
+                    repo.hiddenFolders = repo.hiddenFolders.filterNot { it.startsWith("${album.bucketId}|") }.toSet() +
+                        HiddenFolders.entry(album.bucketId, dir.absolutePath, album.name)
+                }
+                g.settings.setHidden(album.bucketId, true)
+                if (everywhere && dir != null) {
+                    withContext(Dispatchers.IO) {
+                        val paths = (HiddenFolders.mediaFiles(dir).map { it.absolutePath } + File(dir, ".nomedia").absolutePath + dir.absolutePath).toTypedArray()
+                        scanPaths(app, paths)
+                    }
+                    delay(1500)
+                    repo.refresh()
+                    message("Hid \"${album.name}\" from other apps too")
+                } else {
+                    message("Hid \"${album.name}\" in Haze only")
+                }
+            } else {
+                val folder = HiddenFolders.pathFor(prefs.value.hiddenFolders, album.bucketId)
+                g.settings.setHidden(album.bucketId, false)
+                if (folder != null) {
+                    val dir = File(folder)
+                    val files = withContext(Dispatchers.IO) {
+                        runCatching { File(dir, ".nomedia").delete() }
+                        HiddenFolders.mediaFiles(dir).map { it.absolutePath }
+                    }
+                    g.settings.setHiddenFolder("", album.bucketId, false)
+                    repo.hiddenFolders = repo.hiddenFolders.filterNot { it.startsWith("${album.bucketId}|") }.toSet()
+                    withContext(Dispatchers.IO) { scanPaths(app, (files + dir.absolutePath).toTypedArray()) }
+                    delay(1500)
+                    repo.refresh()
+                }
+                message("\"${album.name}\" is visible again")
+            }
+        }
+    }
+
+    private suspend fun scanPaths(app: Application, paths: Array<String>) {
+        if (paths.isEmpty()) return
+        kotlinx.coroutines.suspendCancellableCoroutine<Unit> { cont ->
+            var left = paths.size
+            android.media.MediaScannerConnection.scanFile(app, paths, null) { _, _ ->
+                left--
+                if (left <= 0 && cont.isActive) cont.resumeWith(Result.success(Unit))
+            }
+            // Never wait forever on the scanner.
+            Handler(Looper.getMainLooper()).postDelayed({ if (cont.isActive) cont.resumeWith(Result.success(Unit)) }, 8000)
+        }
+    }
+
+    fun setCover(album: Album, itemId: Long?) {
+        viewModelScope.launch {
+            g.settings.setCover(album.bucketId, itemId)
+            message(if (itemId == null) "Cover reset" else "Cover updated")
+        }
     }
 
     fun renameAlbum(album: Album, newName: String) {
@@ -404,30 +511,38 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
 
     private var pendingIds: List<Long> = emptyList()
 
+    /** Files of an album hidden from other apps aren't in the media library, so the system can't trash or edit them. */
+    private fun needsShowFirst(list: List<MediaItem>): Boolean {
+        val blocked = list.any { it.uri.scheme == "file" && it.id >= 0 }
+        if (blocked) message("Show the album again first")
+        return blocked
+    }
+
     fun requestTrash(list: List<MediaItem>) {
-        if (list.isEmpty()) return
+        if (list.isEmpty() || needsShowFirst(list)) return
         pendingIds = list.map { it.id }
         _events.tryEmit(UiEvent.Trash(list.map { it.uri }))
     }
 
     fun requestRestore(list: List<MediaItem>) {
-        if (list.isEmpty()) return
+        if (list.isEmpty() || needsShowFirst(list)) return
         pendingIds = list.map { it.id }
         _events.tryEmit(UiEvent.Restore(list.map { it.uri }))
     }
 
     fun requestDeleteForever(list: List<MediaItem>) {
-        if (list.isEmpty()) return
+        if (list.isEmpty() || needsShowFirst(list)) return
         pendingIds = list.map { it.id }
         _events.tryEmit(UiEvent.DeleteForever(list.map { it.uri }))
     }
 
     fun rename(item: MediaItem, newName: String) {
-        if (newName == item.name) return
+        if (newName == item.name || needsShowFirst(listOf(item))) return
         _events.tryEmit(UiEvent.Rename(item.uri, newName, item.id))
     }
 
     fun editMeta(item: MediaItem, dateMs: Long?, stripGps: Boolean) {
+        if (needsShowFirst(listOf(item))) return
         _events.tryEmit(UiEvent.EditMeta(item.uri, item.id, item.isVideo, dateMs, stripGps))
     }
 
