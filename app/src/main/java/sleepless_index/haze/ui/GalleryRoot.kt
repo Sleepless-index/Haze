@@ -123,7 +123,7 @@ fun GalleryRoot(
                     onPickCover = { id -> nav.navigate("cover/$id") },
                 )
             }
-            composable("search") { SearchScreen(vm, onOpen = openViewer) }
+            composable("search") { SearchScreen(vm, onOpen = openViewer, onOpenAlbum = { id -> nav.navigate("album/$id") }) }
             composable(
                 route = "settings",
                 enterTransition = { slideInHorizontally(tween(300)) { it / 5 } + fadeIn(tween(300)) },

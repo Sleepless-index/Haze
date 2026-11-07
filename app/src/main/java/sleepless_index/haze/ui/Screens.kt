@@ -310,8 +310,9 @@ fun CollectionScreen(
 // ---------------------------------------------------------------------------------------------
 
 @Composable
-fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit) {
+fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit, onOpenAlbum: (Long) -> Unit = {}) {
     val items by vm.items.collectAsStateWithLifecycle()
+    val albums by vm.albums.collectAsStateWithLifecycle()
     val prefs by vm.prefs.collectAsStateWithLifecycle()
     val favs by vm.favorites.collectAsStateWithLifecycle()
     val selected by vm.selected.collectAsStateWithLifecycle()
@@ -329,10 +330,43 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit) {
             emptyList()
         } else {
             withContext(Dispatchers.Default) {
-                // Every word must match somewhere: name, album, month, year, or the type
-                // ("video", "photo", "mp4", "jpg"...). "beach 2024 video" just works.
                 val words = q.split(' ', ',').filter { it.isNotEmpty() }
                 val loc = Locale.getDefault()
+                val now = System.currentTimeMillis()
+                val day = 86_400_000L
+                // Natural time words narrow by date and are removed from the text match.
+                val cal = java.util.Calendar.getInstance()
+                var from = Long.MIN_VALUE
+                var to = Long.MAX_VALUE
+                val text = ArrayList<String>()
+                var i = 0
+                while (i < words.size) {
+                    val w = words[i]
+                    val next = words.getOrNull(i + 1)
+                    when {
+                        w == "today" -> { cal.timeInMillis = now; cal.set(java.util.Calendar.HOUR_OF_DAY, 0); cal.set(java.util.Calendar.MINUTE, 0); cal.set(java.util.Calendar.SECOND, 0); from = cal.timeInMillis }
+                        w == "yesterday" -> { cal.timeInMillis = now; cal.set(java.util.Calendar.HOUR_OF_DAY, 0); cal.set(java.util.Calendar.MINUTE, 0); cal.set(java.util.Calendar.SECOND, 0); to = cal.timeInMillis; from = to - day }
+                        w == "last" && next == "week" -> { from = now - 14 * day; to = now - 7 * day; i++ }
+                        w == "last" && next == "month" -> { from = now - 60 * day; to = now - 30 * day; i++ }
+                        w == "last" && next == "year" -> { cal.timeInMillis = now; val y = cal.get(java.util.Calendar.YEAR) - 1; cal.clear(); cal.set(y, 0, 1); from = cal.timeInMillis; cal.set(y + 1, 0, 1); to = cal.timeInMillis; i++ }
+                        w == "week" && text.lastOrNull() == "this" -> { text.removeAt(text.lastIndex); from = now - 7 * day }
+                        w == "month" && text.lastOrNull() == "this" -> { text.removeAt(text.lastIndex); from = now - 30 * day }
+                        else -> text.add(w)
+                    }
+                    i++
+                }
+                fun close(a: String, b: String): Boolean {
+                    if (a.length < 4) return false
+                    // One typo allowed: same length with one differing char, or one char missing/extra.
+                    if (kotlin.math.abs(a.length - b.length) > 1) return false
+                    var x = 0; var y = 0; var miss = 0
+                    while (x < a.length && y < b.length) {
+                        if (a[x] == b[y]) { x++; y++; continue }
+                        if (++miss > 1) return false
+                        if (a.length > b.length) x++ else if (a.length < b.length) y++ else { x++; y++ }
+                    }
+                    return miss + (a.length - x) + (b.length - y) <= 1
+                }
                 items.filter { m ->
                     val typeOk = when (filter) {
                         1 -> !m.isVideo
@@ -340,18 +374,23 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit) {
                         3 -> m.id in favs
                         else -> true
                     }
-                    typeOk && (words.isEmpty() || run {
+                    typeOk && m.dateMs in from..to && (text.isEmpty() || run {
                         val hay = buildString {
                             append(m.name.lowercase(loc)).append(' ')
                             append(m.bucketName.lowercase(loc)).append(' ')
                             append(monthLabel(m.dateMs).lowercase(loc)).append(' ')
                             append(if (m.isVideo) "video videos" else "photo photos image").append(' ')
                         }
-                        words.all { it in hay }
+                        val hayWords = hay.split(' ', '_', '-', '.').filter { it.isNotEmpty() }
+                        text.all { w -> w in hay || hayWords.any { close(w, it) } }
                     })
                 }
             }
         }
+    }
+    val albumHits = remember(albums, query) {
+        val q = query.trim().lowercase(Locale.getDefault())
+        if (q.length < 2) emptyList() else albums.filter { it.name.lowercase(Locale.getDefault()).contains(q) }.take(10)
     }
     val entries = remember(results) { buildEntries(results) }
     val borderColor by animateColorAsState(
@@ -423,6 +462,41 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit) {
             ) {
                 listOf("All", "Photos", "Videos", "Favorites").forEachIndexed { i, label ->
                     FilterChipPill(label = label, active = filter == i, onClick = { filter = i })
+                }
+            }
+
+            if (albumHits.isNotEmpty() && !selectMode) {
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    albumHits.forEach { a ->
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(cs.surface)
+                                .border(BorderStroke(1.dp, cs.outline), RoundedCornerShape(16.dp))
+                                .bounceClick(onClick = { onOpenAlbum(a.bucketId) })
+                                .padding(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            coil.compose.AsyncImage(
+                                model = remember(a.cover.uri) { sleepless_index.haze.data.thumbRequest(ctx, a.cover.uri, 120, a.cover.isVideo) },
+                                contentDescription = null,
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(cs.surfaceVariant),
+                            )
+                            Column(Modifier.padding(end = 10.dp)) {
+                                Text(a.name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onBackground, maxLines = 1)
+                                Text("%,d items".format(a.count), fontSize = 11.sp, color = cs.onSurfaceVariant)
+                            }
+                        }
+                    }
                 }
             }
 

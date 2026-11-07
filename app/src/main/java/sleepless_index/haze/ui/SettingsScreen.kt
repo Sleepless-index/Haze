@@ -239,10 +239,10 @@ private fun Swatch(color: Color, selected: Boolean, label: String, content: @Com
     )
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .size(36.dp)
             .scale(pop)
             .border(2.dp, ring, CircleShape)
-            .padding(5.dp)
+            .padding(4.dp)
             .clip(CircleShape)
             .background(color)
             .bounceClick(role = Role.RadioButton, onClick = onClick),
@@ -554,6 +554,7 @@ fun SettingsScreen(vm: GalleryViewModel, onBack: () -> Unit, onOpenPermissions: 
                         Text("${prefs.trashDays} days", fontSize = 13.sp, color = cs.onSurfaceVariant)
                         Icon(GIcons.ChevronRight, null, tint = cs.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp).size(16.dp))
                     }
+                    Box(Modifier.align(Alignment.TopEnd)) {
                     androidx.compose.material3.DropdownMenu(
                         expanded = daysMenu,
                         onDismissRequest = { daysMenu = false },
@@ -567,6 +568,7 @@ fun SettingsScreen(vm: GalleryViewModel, onBack: () -> Unit, onOpenPermissions: 
                                 },
                             )
                         }
+                    }
                     }
                 }
                 divider()

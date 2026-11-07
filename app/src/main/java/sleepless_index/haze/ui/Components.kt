@@ -65,7 +65,7 @@ fun Modifier.bounceClick(
     val pressed by source.collectIsPressedAsState()
     val s by animateFloatAsState(
         targetValue = if (pressed) (if (gentle) 0.95f else 0.90f) else 1f,
-        animationSpec = if (gentle) spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow)
+        animationSpec = if (gentle) spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
         else spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
         label = "press",
     )
