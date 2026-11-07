@@ -329,6 +329,10 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit) {
             emptyList()
         } else {
             withContext(Dispatchers.Default) {
+                // Every word must match somewhere: name, album, month, year, or the type
+                // ("video", "photo", "mp4", "jpg"...). "beach 2024 video" just works.
+                val words = q.split(' ', ',').filter { it.isNotEmpty() }
+                val loc = Locale.getDefault()
                 items.filter { m ->
                     val typeOk = when (filter) {
                         1 -> !m.isVideo
@@ -336,10 +340,15 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit) {
                         3 -> m.id in favs
                         else -> true
                     }
-                    typeOk && (q.isEmpty() ||
-                        m.name.lowercase(Locale.getDefault()).contains(q) ||
-                        m.bucketName.lowercase(Locale.getDefault()).contains(q) ||
-                        monthLabel(m.dateMs).lowercase(Locale.getDefault()).contains(q))
+                    typeOk && (words.isEmpty() || run {
+                        val hay = buildString {
+                            append(m.name.lowercase(loc)).append(' ')
+                            append(m.bucketName.lowercase(loc)).append(' ')
+                            append(monthLabel(m.dateMs).lowercase(loc)).append(' ')
+                            append(if (m.isVideo) "video videos" else "photo photos image").append(' ')
+                        }
+                        words.all { it in hay }
+                    })
                 }
             }
         }
@@ -382,7 +391,7 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit) {
                 Icon(GIcons.Search, contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
                 Box(Modifier.weight(1f)) {
                     if (query.isEmpty()) {
-                        Text("Name, album or month", color = cs.onSurfaceVariant, fontSize = 15.sp)
+                        Text("Name, album, month or year", color = cs.onSurfaceVariant, fontSize = 15.sp)
                     }
                     BasicTextField(
                         value = query,

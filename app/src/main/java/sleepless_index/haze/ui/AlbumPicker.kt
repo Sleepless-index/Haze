@@ -64,7 +64,10 @@ fun AlbumPickerSheet(
 ) {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
-    val albums by vm.albums.collectAsStateWithLifecycle()
+    val visibleAlbums by vm.albums.collectAsStateWithLifecycle()
+    val hiddenAlbums by vm.hiddenAlbums.collectAsStateWithLifecycle()
+    var showHidden by remember { mutableStateOf(false) }
+    val albums = if (showHidden) visibleAlbums + hiddenAlbums else visibleAlbums
     val all by vm.items.collectAsStateWithLifecycle()
     val roots = remember { MediaOps.storageRoots(context) }
     var creating by remember { mutableStateOf(false) }
@@ -97,6 +100,18 @@ fun AlbumPickerSheet(
                 fontWeight = FontWeight.ExtraBold,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp),
             )
+            if (hiddenAlbums.isNotEmpty()) {
+                Text(
+                    if (showHidden) "Hide hidden albums" else "Show hidden · ${hiddenAlbums.size}",
+                    fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = cs.primary,
+                    modifier = Modifier
+                        .padding(start = 20.dp, bottom = 12.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(cs.surfaceVariant)
+                        .bounceClick(onClick = { showHidden = !showHidden })
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                )
+            }
             if (move && !MediaOps.hasAllFiles()) {
                 Column(
                     Modifier.fillMaxWidth().padding(horizontal = 20.dp),

@@ -58,13 +58,15 @@ fun Modifier.bounceClick(
     enabled: Boolean = true,
     role: Role = Role.Button,
     onLongClick: (() -> Unit)? = null,
+    gentle: Boolean = false,
     onClick: () -> Unit,
 ): Modifier = composed {
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     val s by animateFloatAsState(
-        targetValue = if (pressed) 0.90f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        targetValue = if (pressed) (if (gentle) 0.95f else 0.90f) else 1f,
+        animationSpec = if (gentle) spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow)
+        else spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
         label = "press",
     )
     this

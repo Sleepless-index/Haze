@@ -114,7 +114,7 @@ private fun AlbumTile(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .bounceClick(onLongClick = onLongClick, onClick = onClick),
+            .bounceClick(onLongClick = onLongClick, gentle = true, onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         val request = remember(cover.uri) {
@@ -299,7 +299,7 @@ fun AlbumsScreen(
                         )
                         if (hiddenAlbums.isNotEmpty()) {
                             CompactMenuItem(
-                                text = { Text(if (showHidden) "Hide hidden albums" else "Hidden albums (${hiddenAlbums.size})") },
+                                text = { Text(if (showHidden) "Hide hidden" else "Hidden · ${hiddenAlbums.size}") },
                                 onClick = {
                                     menu = false
                                     showHidden = !showHidden

@@ -13,8 +13,8 @@ android {
         applicationId = "sleepless_index.haze"
         minSdk = 29
         targetSdk = 35
-        versionCode = 8
-        versionName = "0.3.5"
+        versionCode = 9
+        versionName = "0.3.6"
     }
 
     // Release signing: reads KEYSTORE_FILE / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD
