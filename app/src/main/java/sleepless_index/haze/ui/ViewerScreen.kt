@@ -96,6 +96,7 @@ import androidx.compose.ui.unit.sp
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import coil.imageLoader
 import coil.request.ImageRequest
 import sleepless_index.haze.data.MediaItem
 import sleepless_index.haze.data.formatDuration
@@ -167,6 +168,15 @@ fun ViewerScreen(
                 label = "ambientBackdrop",
                 modifier = Modifier.fillMaxSize().clipToBounds(),
             ) { AmbientBackdrop(it) }
+        }
+        val preloadCtx = LocalContext.current
+        LaunchedEffect(pagerState.currentPage, list) {
+            val loader = preloadCtx.imageLoader
+            for (d in intArrayOf(1, -1, 2)) {
+                val m = list.getOrNull(pagerState.currentPage + d) ?: continue
+                if (m.isVideo) continue
+                loader.enqueue(ImageRequest.Builder(preloadCtx).data(m.uri).size(2048).build())
+            }
         }
         HorizontalPager(
             state = pagerState,
@@ -673,6 +683,28 @@ internal fun ZoomableImage(
         contentAlignment = Alignment.Center,
     ) {
         val request = remember(item.uri) { ImageRequest.Builder(ctx).data(item.uri).size(2048).build() }
+        // The grid thumbnail is already cached, so it shows instantly while the full photo decodes.
+        val thumb = remember(item.uri) { sleepless_index.haze.data.thumbRequest(ctx, item.uri, 640, false) }
+        val imgMod = Modifier
+            .fillMaxSize()
+            .padding(top = insetTop, bottom = insetBottom)
+            .graphicsLayer {
+                val sc = scale * fitFactor
+                scaleX = sc
+                scaleY = sc
+                rotationZ = rotation
+                translationX = offset.x
+                translationY = offset.y
+            }
+        var fullLoaded by remember(item.uri) { mutableStateOf(false) }
+        if (!fullLoaded) {
+            AsyncImage(
+                model = thumb,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = imgMod,
+            )
+        }
         AsyncImage(
             model = request,
             contentDescription = item.name,
@@ -682,18 +714,9 @@ internal fun ZoomableImage(
                 if (d.intrinsicWidth > 0 && d.intrinsicHeight > 0) {
                     imgSize = IntSize(d.intrinsicWidth, d.intrinsicHeight)
                 }
+                fullLoaded = true
             },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = insetTop, bottom = insetBottom)
-                .graphicsLayer {
-                    val sc = scale * fitFactor
-                    scaleX = sc
-                    scaleY = sc
-                    rotationZ = rotation
-                    translationX = offset.x
-                    translationY = offset.y
-                },
+            modifier = imgMod,
         )
     }
 }
