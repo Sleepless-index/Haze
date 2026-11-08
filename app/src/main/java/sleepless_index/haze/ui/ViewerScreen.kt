@@ -153,8 +153,8 @@ fun ViewerScreen(
     val topBarH = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 64.dp
     val bottomBarH = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 14.dp + 56.dp + 10.dp +
         (if (list.size > 1) 88.dp else 0.dp)
-    val insetTop by animateDpAsState(if (chrome || autoHidden) topBarH else 0.dp, tween(360, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "insetTop")
-    val insetBottom by animateDpAsState(if (chrome || autoHidden) bottomBarH else 0.dp, tween(360, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "insetBottom")
+    val insetTop by animateDpAsState(if (chrome || autoHidden) topBarH else 0.dp, tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "insetTop")
+    val insetBottom by animateDpAsState(if (chrome || autoHidden) bottomBarH else 0.dp, tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "insetBottom")
 
     val blurOn = vm.prefs.collectAsStateWithLifecycle().value.blur
     val blurDp by animateDpAsState(if (showInfo && blurOn) 28.dp else 0.dp, tween(260), label = "infoBlur")

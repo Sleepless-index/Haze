@@ -31,7 +31,7 @@ class MediaThumbFetcher(
         try {
             val bmp = context.contentResolver.loadThumbnail(uri, android.util.Size(w, h), null)
             // Never show a blurry upscaled thumbnail: let Coil decode properly instead.
-            if (maxOf(bmp.width, bmp.height) < (maxOf(w, h) * 0.8f).toInt()) return@withContext null
+            if (maxOf(bmp.width, bmp.height) < (maxOf(w, h) * 0.75f).toInt()) return@withContext null
             DrawableResult(
                 drawable = BitmapDrawable(context.resources, bmp),
                 isSampled = true,
@@ -56,11 +56,9 @@ fun thumbRequest(context: Context, uri: Uri, px: Int, video: Boolean = false): I
     ImageRequest.Builder(context)
         .data(uri)
         .size(px)
-        .apply {
-            // The system thumbnail cache is only a win for video frames. Photos are decoded
-            // (down-sampled) directly from the original so they stay sharp.
-            if (video) setParameter("thumb", true)
-        }
+        // Ask the system's thumbnail cache first for photos too: it's far quicker than decoding
+        // the full original. The fetcher falls back to a real decode if the thumbnail is too small.
+        .setParameter("thumb", true)
         .build()
 
 /**
