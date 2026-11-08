@@ -465,7 +465,26 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit, o
                 }
             }
 
-            if (albumHits.isNotEmpty() && !selectMode) {
+            MediaCollection(
+                entries = entries,
+                layout = prefs.layout,
+                columns = prefs.columns,
+                selected = selected,
+                selectMode = selectMode,
+                favorites = favs,
+                onClick = { item ->
+                    if (selectMode) {
+                        vm.toggle(item.id)
+                    } else {
+                        val idx = results.indexOfFirst { it.id == item.id }
+                        if (idx >= 0) onOpen(results, idx)
+                    }
+                },
+                onSetSelected = { id, on -> vm.setSelected(id, on) },
+                bottomPad = BottomBarSpace + navBottomInset(),
+                modifier = Modifier.weight(1f),
+                header = if (albumHits.isNotEmpty() && !selectMode) {
+                    {
                 val ctx = androidx.compose.ui.platform.LocalContext.current
                 Row(
                     modifier = Modifier
@@ -498,26 +517,8 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit, o
                         }
                     }
                 }
-            }
-
-            MediaCollection(
-                entries = entries,
-                layout = prefs.layout,
-                columns = prefs.columns,
-                selected = selected,
-                selectMode = selectMode,
-                favorites = favs,
-                onClick = { item ->
-                    if (selectMode) {
-                        vm.toggle(item.id)
-                    } else {
-                        val idx = results.indexOfFirst { it.id == item.id }
-                        if (idx >= 0) onOpen(results, idx)
                     }
-                },
-                onSetSelected = { id, on -> vm.setSelected(id, on) },
-                bottomPad = BottomBarSpace + navBottomInset(),
-                modifier = Modifier.weight(1f),
+                } else null,
                 emptyText = if (query.isBlank() && filter == 0) "Search your library" else "No matches",
             )
         }

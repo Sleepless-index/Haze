@@ -286,9 +286,11 @@ fun MediaCollection(
     bottomPad: Dp,
     modifier: Modifier = Modifier,
     emptyText: String = "Nothing here yet",
+    header: (@Composable () -> Unit)? = null,
 ) {
     if (entries.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            if (header != null) Box(Modifier.align(Alignment.TopStart)) { header() }
             Text(
                 text = emptyText,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -445,6 +447,7 @@ fun MediaCollection(
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
+                        if (header != null) item(key = "header", span = { GridItemSpan(maxLineSpan) }, contentType = "header") { header() }
                         items(
                             items = entries,
                             key = { it.key },
@@ -484,6 +487,7 @@ fun MediaCollection(
                         verticalItemSpacing = 6.dp,
                         modifier = Modifier.fillMaxSize(),
                     ) {
+                        if (header != null) item(key = "header", span = StaggeredGridItemSpan.FullLine, contentType = "header") { header() }
                         items(
                             items = masonryEntries,
                             key = { it.key },
