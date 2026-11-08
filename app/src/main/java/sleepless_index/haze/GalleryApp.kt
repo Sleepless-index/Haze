@@ -26,12 +26,14 @@ class GalleryApp : Application(), ImageLoaderFactory {
         db = Room.databaseBuilder(this, AppDatabase::class.java, "gallery.db").build()
         settings = SettingsStore(this)
         repository = MediaRepository(this)
+        Thread { runCatching { sleepless_index.haze.data.ThumbCacheFetcher.trim(this) } }.start()
     }
 
     override fun newImageLoader(): ImageLoader {
         val app = this
         return ImageLoader.Builder(this)
             .components {
+                add(sleepless_index.haze.data.ThumbCacheFetcher.Factory(app))
                 add(sleepless_index.haze.data.MediaThumbFetcher.Factory(app))
                 add(sleepless_index.haze.data.VaultVideoFrameFetcher.Factory(app))
                 add(VideoFrameDecoder.Factory())
