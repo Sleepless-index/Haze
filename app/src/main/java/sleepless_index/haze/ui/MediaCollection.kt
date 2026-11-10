@@ -163,11 +163,13 @@ fun MediaTile(
         val request = remember(item.uri, thumbPx) {
             thumbRequest(ctx, item.uri, thumbPx, item.isVideo)
         }
+        var loaded by remember(item.uri, thumbPx) { mutableStateOf(false) }
         AsyncImage(
             model = request,
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
+            onSuccess = { loaded = true },
+            modifier = Modifier.fillMaxSize().then(if (loaded) Modifier else Modifier.shimmer()),
         )
 
         Box(
@@ -228,7 +230,7 @@ fun MediaTile(
                 animationSpec = tween(160),
                 label = "boxFill",
             )
-            val boxShape = RoundedCornerShape(6.dp)
+            val boxShape = RoundedCornerShape(8.dp)
             Box(
                 modifier = Modifier
                     .size(22.dp)
@@ -257,7 +259,7 @@ fun MediaTile(
 fun DurationBadge(durationMs: Long, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(Color.Black.copy(alpha = 0.62f))
             .padding(start = 5.dp, end = 7.dp, top = 2.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -122,7 +122,7 @@ private fun AlbumRow(a: AlbumSize, max: Long, onClick: () -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(a.name, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(a.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("%,d items".format(a.count), fontSize = 12.sp, color = cs.onSurfaceVariant)
             }
             Text(formatSize(a.bytes), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = cs.onBackground)
@@ -198,7 +198,7 @@ fun StorageScreen(
             },
         )
         val s = stats ?: return@Column
-        val cardShape = RoundedCornerShape(22.dp)
+        val cardShape = RoundedCornerShape(20.dp)
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 40.dp + navBottom),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -234,11 +234,11 @@ fun StorageScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(cs.primary))
-                        Text("Photos ${formatSize(s.photoBytes)}", fontSize = 12.5.sp, color = cs.onSurfaceVariant)
+                        Text("Photos ${formatSize(s.photoBytes)}", fontSize = 12.sp, color = cs.onSurfaceVariant)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(cs.primary.copy(alpha = 0.4f)))
-                        Text("Videos ${formatSize(s.videoBytes)}", fontSize = 12.5.sp, color = cs.onSurfaceVariant)
+                        Text("Videos ${formatSize(s.videoBytes)}", fontSize = 12.sp, color = cs.onSurfaceVariant)
                     }
                 }
             }

@@ -41,14 +41,14 @@ private fun ActionTile(icon: ImageVector, label: String, modifier: Modifier, onC
     Column(
         modifier
             .height(84.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(cs.surfaceVariant)
             .bounceClick(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(9.dp, Alignment.CenterVertically),
     ) {
         Icon(icon, null, tint = cs.onBackground, modifier = Modifier.size(22.dp))
-        Text(label, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, maxLines = 1)
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground, maxLines = 1)
     }
 }
 
@@ -88,7 +88,7 @@ fun AlbumActionsSheet(
                     model = remember(album.cover.uri) { thumbRequest(context, album.cover.uri, 160, album.cover.isVideo) },
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp)).background(cs.surfaceVariant),
+                    modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(cs.surfaceVariant),
                 )
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(album.name, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = cs.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -110,7 +110,7 @@ fun AlbumActionsSheet(
                 Modifier
                     .fillMaxWidth()
                     .height(54.dp)
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(HeartRed.copy(alpha = 0.12f))
                     .bounceClick(onClick = onDelete),
                 verticalAlignment = Alignment.CenterVertically,

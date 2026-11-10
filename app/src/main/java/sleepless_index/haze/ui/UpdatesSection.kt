@@ -43,7 +43,7 @@ private fun Pill(text: String, accent: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .height(36.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(if (accent) cs.primary else cs.surfaceVariant)
             .bounceClick(onClick = onClick)
             .padding(horizontal = 18.dp),
@@ -51,7 +51,7 @@ private fun Pill(text: String, accent: Boolean, onClick: () -> Unit) {
     ) {
         Text(
             text,
-            fontSize = 13.5.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = if (accent) cs.onPrimary else cs.onBackground,
         )
@@ -71,7 +71,7 @@ private fun UpdateRow(title: String, sub: String?, trailing: @Composable () -> U
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
-            if (sub != null) Text(sub, fontSize = 12.5.sp, color = cs.onSurfaceVariant)
+            if (sub != null) Text(sub, fontSize = 12.sp, color = cs.onSurfaceVariant)
         }
         trailing()
     }
@@ -170,7 +170,7 @@ fun UpdatesSection(vm: GalleryViewModel) {
                                 Modifier
                                     .fillMaxWidth()
                                     .height(48.dp)
-                                    .clip(RoundedCornerShape(24.dp))
+                                    .clip(RoundedCornerShape(26.dp))
                                     .background(cs.primary)
                                     .bounceClick(onClick = { updater.download() }),
                                 contentAlignment = Alignment.Center,

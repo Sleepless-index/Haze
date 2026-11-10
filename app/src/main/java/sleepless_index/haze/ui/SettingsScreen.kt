@@ -92,7 +92,7 @@ private fun LayoutCard(
     val cs = MaterialTheme.colorScheme
     val border by animateColorAsState(if (selected) cs.primary else cs.outline, tween(220), label = "cardBorder")
     val width by animateDpAsState(if (selected) 2.dp else 1.dp, tween(220), label = "cardBorderW")
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(20.dp)
     Column(
         modifier = modifier
             .clip(shape)
@@ -145,12 +145,12 @@ private fun MasonryPreview() {
     val cs = MaterialTheme.colorScheme
     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Column(Modifier.weight(1f).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Box(Modifier.weight(3f).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(cs.outline))
-            Box(Modifier.weight(2f).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(cs.outline))
+            Box(Modifier.weight(3f).fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(cs.outline))
+            Box(Modifier.weight(2f).fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(cs.outline))
         }
         Column(Modifier.weight(1f).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Box(Modifier.weight(2f).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(cs.outline))
-            Box(Modifier.weight(3f).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(cs.outline))
+            Box(Modifier.weight(2f).fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(cs.outline))
+            Box(Modifier.weight(3f).fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(cs.outline))
         }
     }
 }
@@ -158,7 +158,7 @@ private fun MasonryPreview() {
 @Composable
 internal fun CardGroup(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val cs = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(20.dp)
     Column(
         modifier = modifier
             .padding(horizontal = 16.dp)
@@ -172,7 +172,7 @@ internal fun CardGroup(modifier: Modifier = Modifier, content: @Composable () ->
 @Composable
 private fun SegmentRow(title: String, options: List<String>, selected: Int, onSelect: (Int) -> Unit) {
     val cs = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(20.dp)
     Row(
         modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -283,7 +283,7 @@ private fun CustomColorDialog(initial: Int, onDismiss: () -> Unit, onApply: (Int
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(190.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .pointerInput(Unit) {
                             fun set(p: Offset) {
                                 sat = (p.x / size.width).coerceIn(0f, 1f)
@@ -319,7 +319,7 @@ private fun CustomColorDialog(initial: Int, onDismiss: () -> Unit, onApply: (Int
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(28.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .pointerInput(Unit) {
                             detectTapGestures {
                                 hue = (it.x / size.width).coerceIn(0f, 1f) * 360f
@@ -360,7 +360,7 @@ private fun CustomColorDialog(initial: Int, onDismiss: () -> Unit, onApply: (Int
                     Box(
                         Modifier
                             .size(52.dp)
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(color)
                     )
                     OutlinedTextField(

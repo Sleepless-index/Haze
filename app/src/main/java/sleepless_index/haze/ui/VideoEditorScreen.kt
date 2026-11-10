@@ -438,7 +438,7 @@ fun VideoEditorScreen(vm: GalleryViewModel, itemId: Long, onClose: () -> Unit) {
                 Text(
                     "Reset", color = cs.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(18.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .bounceClick(onClick = { resetAll() })
                         .padding(horizontal = 14.dp, vertical = 10.dp),
                 )
@@ -638,8 +638,8 @@ fun VideoEditorScreen(vm: GalleryViewModel, itemId: Long, onClose: () -> Unit) {
                             Box(
                                 Modifier
                                     .size(84.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .border(BorderStroke(2.dp, ring), RoundedCornerShape(14.dp))
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .border(BorderStroke(2.dp, ring), RoundedCornerShape(16.dp))
                                     .background(cs.surfaceVariant)
                             ) {
                                 val arr = colorArray(l.brightness, l.contrast, l.saturation, l.warmth, l.gray)
@@ -673,7 +673,7 @@ fun VideoEditorScreen(vm: GalleryViewModel, itemId: Long, onClose: () -> Unit) {
             Column(
                 modifier = Modifier
                     .padding(32.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(26.dp))
                     .background(cs.surface)
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -732,7 +732,7 @@ internal fun TrimStrip(
                 .fillMaxSize()
                 .padding(horizontal = HandleW),
         ) {
-            Row(Modifier.fillMaxSize().clip(RoundedCornerShape(6.dp))) {
+            Row(Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))) {
                 val count = 8
                 for (i in 0 until count) {
                     val at = (dur * (i + 0.5f) / count).toLong()

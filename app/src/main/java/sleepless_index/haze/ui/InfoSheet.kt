@@ -259,7 +259,7 @@ fun InfoSheet(
             // Camera
             if (info.camera != null || info.specs.isNotEmpty()) {
                 Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cardBg).padding(14.dp),
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(cardBg).padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -271,7 +271,7 @@ fun InfoSheet(
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             for (s in info.specs) {
                                 Text(
-                                    s, fontSize = 12.5.sp, fontFamily = FontFamily.Monospace, color = cs.onBackground,
+                                    s, fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = cs.onBackground,
                                     textAlign = TextAlign.Center, maxLines = 1,
                                     modifier = Modifier
                                         .weight(1f)
@@ -287,7 +287,7 @@ fun InfoSheet(
 
             // Location
             info.latLong?.let { ll ->
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cardBg)) {
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(cardBg)) {
                     Box(
                         Modifier.bounceClick(onClick = {
                             runCatching {
@@ -308,14 +308,14 @@ fun InfoSheet(
                             Text("Location", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
                             Text(
                                 "%.5f, %.5f  ·  tap the map to open it".format(ll[0], ll[1]),
-                                fontSize = 12.5.sp, fontFamily = FontFamily.Monospace, color = cs.onSurfaceVariant,
+                                fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = cs.onSurfaceVariant,
                             )
                         }
                         if (item.id >= 0) {
                             Text(
                                 "Remove", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = cs.error,
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(18.dp))
+                                    .clip(RoundedCornerShape(20.dp))
                                     .background(cs.error.copy(alpha = 0.14f))
                                     .bounceClick(onClick = { removingLocation = true })
                                     .padding(horizontal = 14.dp, vertical = 9.dp),
@@ -355,7 +355,7 @@ fun InfoSheet(
             if (!infoLoaded) Spacer(Modifier.height(54.dp))
             if (info.tech.isNotEmpty()) {
                 Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(cardBg)
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(cardBg)
                         .animateContentSize(androidx.compose.animation.core.spring(dampingRatio = 0.9f, stiffness = 380f)),
                 ) {
                     Row(
@@ -396,7 +396,7 @@ fun InfoSheet(
                     if (techOpen) {
                         Text(
                             "Tap a value to copy it. Rows marked Editable can be changed from this sheet; the rest are read-only.",
-                            fontSize = 12.5.sp, lineHeight = 18.sp, color = cs.onSurfaceVariant,
+                            fontSize = 12.sp, lineHeight = 18.sp, color = cs.onSurfaceVariant,
                             modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 6.dp),
                         )
                         for (row in info.tech) {
@@ -408,7 +408,7 @@ fun InfoSheet(
                                 verticalAlignment = Alignment.Top,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
-                                Text(row.label, fontSize = 12.5.sp, color = cs.onSurfaceVariant, modifier = Modifier.width(104.dp))
+                                Text(row.label, fontSize = 12.sp, color = cs.onSurfaceVariant, modifier = Modifier.width(104.dp))
                                 Text(row.value, fontSize = 13.sp, color = cs.onBackground, modifier = Modifier.weight(1f))
                                 if (row.editable) {
                                     Text(
@@ -447,7 +447,7 @@ fun InfoSheet(
 private fun StatCard(label: String, top: String, sub: String, bg: Color, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
     Column(
-        modifier = modifier.clip(RoundedCornerShape(18.dp)).background(bg).padding(horizontal = 12.dp, vertical = 12.dp),
+        modifier = modifier.clip(RoundedCornerShape(20.dp)).background(bg).padding(horizontal = 12.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.6.sp, color = cs.onSurfaceVariant, maxLines = 1)

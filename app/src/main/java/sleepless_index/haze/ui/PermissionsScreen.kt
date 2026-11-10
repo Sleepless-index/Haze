@@ -128,7 +128,7 @@ fun PermissionsScreen(
             }
             Text(
                 if (state.all) "All set" else "Allow access",
-                fontSize = 13.5.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = cs.onPrimary,
                 textAlign = TextAlign.Center,
@@ -136,7 +136,7 @@ fun PermissionsScreen(
                     .navigationBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 12.dp)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(cs.primary)
                     .bounceClick(onClick = { if (!state.all) onGrantAll() else onBack?.invoke() })
                     .padding(vertical = 11.dp),
@@ -187,7 +187,7 @@ private fun PermCard(
             exit = shrinkVertically(tween(180)) + fadeOut(tween(120)),
         ) {
             Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(why, fontSize = 12.5.sp, color = cs.onSurfaceVariant)
+                Text(why, fontSize = 12.sp, color = cs.onSurfaceVariant)
                 if (!granted) {
                     Text(
                         "Allow",
@@ -195,7 +195,7 @@ private fun PermCard(
                         fontWeight = FontWeight.ExtraBold,
                         color = cs.onPrimary,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(18.dp))
+                            .clip(RoundedCornerShape(20.dp))
                             .background(cs.primary)
                             .bounceClick(onClick = onAllow)
                             .padding(horizontal = 20.dp, vertical = 8.dp),

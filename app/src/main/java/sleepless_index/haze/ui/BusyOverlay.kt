@@ -142,12 +142,12 @@ fun BusyOverlay(vm: GalleryViewModel) {
                     )
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(last?.text ?: "", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = cs.onBackground, maxLines = 1)
+                    Text(last?.text ?: "", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = cs.onBackground, maxLines = 1)
                     last?.detail?.let {
-                        Text(it, fontSize = 12.5.sp, color = cs.onSurfaceVariant, maxLines = 1)
+                        Text(it, fontSize = 12.sp, color = cs.onSurfaceVariant, maxLines = 1)
                     }
                     if (last?.detail == null && p != null) {
-                        Text("${(p * 100).toInt()}%", fontSize = 12.5.sp, color = cs.onSurfaceVariant)
+                        Text("${(p * 100).toInt()}%", fontSize = 12.sp, color = cs.onSurfaceVariant)
                     }
                 }
                 if (last?.cancellable == true) {
@@ -160,7 +160,7 @@ fun BusyOverlay(vm: GalleryViewModel) {
                             .padding(horizontal = 16.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("Cancel", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
+                        Text("Cancel", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = cs.onBackground)
                     }
                 } else {
                     Box(Modifier.size(6.dp))

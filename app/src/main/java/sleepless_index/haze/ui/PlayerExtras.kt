@@ -134,7 +134,7 @@ fun QueuePanel(
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text("Queue", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text("${queue.size} videos", color = Color(0xFFA8A8AC), fontSize = 12.5.sp)
+                        Text("${queue.size} videos", color = Color(0xFFA8A8AC), fontSize = 12.sp)
                     }
                     GIconButton(
                         if (loop == LoopMode.REPEAT) GIcons.RepeatOne else GIcons.Repeat, "Loop", onClick = onLoop, size = 40.dp, flat = true,
@@ -157,7 +157,7 @@ fun QueuePanel(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Box(Modifier.size(width = 84.dp, height = 52.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF222222))) {
+                            Box(Modifier.size(width = 84.dp, height = 52.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF222222))) {
                                 AsyncImage(
                                     model = remember(v.uri) { thumbRequest(ctx, v.uri, 240, true) },
                                     contentDescription = null,
@@ -169,7 +169,7 @@ fun QueuePanel(
                                 Text(
                                     v.name,
                                     color = if (current) cs.primary else Color.White,
-                                    fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                                 )
                                 Text(formatDuration(v.durationMs), color = Color(0xFFA8A8AC), fontSize = 12.sp)

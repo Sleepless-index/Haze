@@ -508,7 +508,7 @@ fun SearchScreen(vm: GalleryViewModel, onOpen: (List<MediaItem>, Int) -> Unit, o
                                 model = remember(a.cover.uri) { sleepless_index.haze.data.thumbRequest(ctx, a.cover.uri, 120, a.cover.isVideo) },
                                 contentDescription = null,
                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(14.dp)).background(cs.surfaceVariant),
+                                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)).background(cs.surfaceVariant),
                             )
                             Column(Modifier.padding(end = 14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Text(a.name, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = cs.onBackground, maxLines = 1)

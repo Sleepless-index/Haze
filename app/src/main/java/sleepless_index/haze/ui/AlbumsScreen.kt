@@ -121,15 +121,17 @@ private fun AlbumTile(
             sleepless_index.haze.data.thumbRequest(ctx, cover.uri, 480, cover.isVideo)
         }
         Box {
+            var loaded by remember(cover.uri) { mutableStateOf(false) }
             AsyncImage(
                 model = request,
                 contentDescription = name,
                 contentScale = ContentScale.Crop,
+                onSuccess = { loaded = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(cs.surfaceVariant),
+                    .then(if (loaded) Modifier.background(cs.surfaceVariant) else Modifier.shimmer(cs.surfaceVariant)),
             )
             androidx.compose.animation.AnimatedVisibility(
                 visible = pinned,
@@ -141,7 +143,7 @@ private fun AlbumTile(
                     Modifier
                         .padding(8.dp)
                         .size(26.dp)
-                        .clip(RoundedCornerShape(13.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(Color.Black.copy(alpha = 0.55f)),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -158,7 +160,7 @@ private fun AlbumTile(
                     Modifier
                         .padding(8.dp)
                         .size(28.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(Color.Black.copy(alpha = 0.55f)),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -200,7 +202,7 @@ private fun ActionRow(icon: ImageVector, label: String, tint: Color? = null, onC
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
-        Text(label, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = color)
+        Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = color)
     }
 }
 

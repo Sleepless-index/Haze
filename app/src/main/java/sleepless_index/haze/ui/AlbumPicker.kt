@@ -125,7 +125,7 @@ fun AlbumPickerSheet(
                         "Allow All files access",
                         fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = cs.onPrimary,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(24.dp))
+                            .clip(RoundedCornerShape(26.dp))
                             .background(cs.primary)
                             .bounceClick(onClick = {
                                 runCatching {
@@ -272,7 +272,7 @@ private fun PickChip(label: String, active: Boolean, onClick: () -> Unit) {
     val cs = MaterialTheme.colorScheme
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(if (active) cs.primary else cs.surfaceVariant)
             .bounceClick(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 9.dp),

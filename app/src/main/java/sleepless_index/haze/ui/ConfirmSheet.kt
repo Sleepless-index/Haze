@@ -80,9 +80,9 @@ fun ConfirmSheet(
                                 modifier = Modifier
                                     .padding(start = (i * 20).dp, top = 4.dp)
                                     .size(36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(RoundedCornerShape(12.dp))
                                     .background(cs.surfaceVariant)
-                                    .border(2.dp, cs.surface, RoundedCornerShape(10.dp)),
+                                    .border(2.dp, cs.surface, RoundedCornerShape(12.dp)),
                             )
                         }
                     }

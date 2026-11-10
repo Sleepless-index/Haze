@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
@@ -254,7 +255,7 @@ fun PillItem(
                 .fillMaxHeight()
                 .widthIn(max = 88.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .background(cs.primary.copy(alpha = glow)),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -342,4 +343,30 @@ fun CompactMenuItem(
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 12.dp),
     ) { text() }
+}
+
+
+/** A soft moving sheen for thumbnails that are still loading. Only apply it until the image is in. */
+fun Modifier.shimmer(base: Color = Color(0xFF1A1A1A)): Modifier = composed {
+    val t by androidx.compose.animation.core.rememberInfiniteTransition(label = "shimmer").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(1300, easing = androidx.compose.animation.core.LinearEasing),
+        ),
+        label = "shimmerT",
+    )
+    val hi = androidx.compose.ui.graphics.lerp(base, Color.White, 0.10f)
+    this.drawBehind {
+        val w = size.width.coerceAtLeast(1f)
+        val x = -w + 2f * w * t
+        drawRect(base)
+        drawRect(
+            androidx.compose.ui.graphics.Brush.linearGradient(
+                colors = listOf(Color.Transparent, hi, Color.Transparent),
+                start = androidx.compose.ui.geometry.Offset(x, 0f),
+                end = androidx.compose.ui.geometry.Offset(x + w, size.height),
+            ),
+        )
+    }
 }

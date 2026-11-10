@@ -149,7 +149,7 @@ private fun PlayerChip(text: String, icon: ImageVector?, accent: Boolean = false
     Row(
         modifier = modifier
             .height(36.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(PlayerChrome)
             .bounceClick(onClick = onClick)
             .padding(horizontal = 14.dp),
@@ -981,7 +981,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
             if (h != null) {
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
+                        .clip(RoundedCornerShape(26.dp))
                         .background(PlayerChrome)
                         .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -1024,7 +1024,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                 if (h != null && h.side == side && h.fraction == null) {
                     Row(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(20.dp))
                             .background(PlayerChrome)
                             .width(92.dp)
                             .padding(vertical = 14.dp),
@@ -1038,7 +1038,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                 } else if (h != null && h.side == side) {
                     Column(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(20.dp))
                             .background(PlayerChrome)
                             .width(if (h.fraction != null) 58.dp else 72.dp)
                             .padding(vertical = 14.dp),
@@ -1449,7 +1449,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier
                                 .padding(start = 24.dp, top = 6.dp)
-                                .clip(RoundedCornerShape(18.dp))
+                                .clip(RoundedCornerShape(20.dp))
                                 .background(PlayerChrome)
                                 .padding(horizontal = 14.dp, vertical = 7.dp),
                         )

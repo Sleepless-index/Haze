@@ -115,5 +115,13 @@ fun GalleryTheme(prefs: Prefs, content: @Composable () -> Unit) {
         }
     }
 
-    MaterialTheme(colorScheme = scheme, content = content)
+    // Fixed-width digits everywhere, so sizes, counts and timers don't jitter as they change.
+    MaterialTheme(colorScheme = scheme) {
+        androidx.compose.material3.ProvideTextStyle(
+            androidx.compose.material3.LocalTextStyle.current.merge(
+                androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
+            ),
+            content = content,
+        )
+    }
 }

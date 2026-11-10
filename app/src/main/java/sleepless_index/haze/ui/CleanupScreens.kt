@@ -69,7 +69,7 @@ import java.util.Locale
 @Composable
 private fun CleanCard(content: @Composable () -> Unit) {
     val cs = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(20.dp)
     Column(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -101,14 +101,14 @@ private fun CleanRow(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(
-            Modifier.size(40.dp).clip(RoundedCornerShape(13.dp)).background(cs.primary.copy(alpha = if (enabled) tileAlpha else 0.15f)),
+            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(cs.primary.copy(alpha = if (enabled) tileAlpha else 0.15f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, null, tint = if (enabled && tileAlpha >= 0.5f) cs.onPrimary else cs.onBackground, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = if (enabled) cs.onBackground else cs.onSurfaceVariant)
-            Text(sub, fontSize = 12.5.sp, color = cs.onSurfaceVariant)
+            Text(sub, fontSize = 12.sp, color = cs.onSurfaceVariant)
         }
         if (enabled) {
             Text(size, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = cs.onBackground)
@@ -285,7 +285,7 @@ fun CleanupScreen(
             if (done == null) {
                 Text(
                     "Large videos aren't counted in the total because you decide what to keep. Scanning happens on this phone only.",
-                    fontSize = 12.5.sp, lineHeight = 18.sp, color = cs.onSurfaceVariant,
+                    fontSize = 12.sp, lineHeight = 18.sp, color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 22.dp),
                 )
             }
@@ -402,7 +402,7 @@ fun CleanupReviewScreen(
                     items(group.items, key = { "${it.id}_${it.isVideo}" }) { m ->
                         val sel = isSelected(m, group)
                         val isKeep = m.id == group.keepId && !sel
-                        val shape = RoundedCornerShape(22.dp)
+                        val shape = RoundedCornerShape(20.dp)
                         Box(
                             Modifier
                                 .fillMaxWidth()
@@ -434,7 +434,7 @@ fun CleanupReviewScreen(
                                     Modifier
                                         .align(Alignment.TopStart)
                                         .padding(10.dp)
-                                        .clip(RoundedCornerShape(13.dp))
+                                        .clip(RoundedCornerShape(12.dp))
                                         .background(cs.primary)
                                         .padding(horizontal = 10.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -500,7 +500,7 @@ fun CleanupReviewScreen(
                             Modifier
                                 .weight(1f)
                                 .height(44.dp)
-                                .clip(RoundedCornerShape(22.dp))
+                                .clip(RoundedCornerShape(20.dp))
                                 .background(cs.surface)
                                 .bounceClick(onClick = { if (safeIndex < groups.size - 1) index = safeIndex + 1 else onBack() }),
                             contentAlignment = Alignment.Center,
@@ -516,7 +516,7 @@ fun CleanupReviewScreen(
                                 Modifier
                                     .weight(1f)
                                     .height(44.dp)
-                                    .clip(RoundedCornerShape(22.dp))
+                                    .clip(RoundedCornerShape(20.dp))
                                     .background(cs.primary.copy(alpha = if (across) 0.28f else 0.16f))
                                     .bounceClick(onClick = { acrossAll = !acrossAll }),
                                 contentAlignment = Alignment.Center,
