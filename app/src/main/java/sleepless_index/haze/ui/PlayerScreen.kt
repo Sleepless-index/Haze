@@ -676,7 +676,8 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
             LoopMode.ONCE, LoopMode.REPEAT -> Player.REPEAT_MODE_ONE
         }
         player.shuffleModeEnabled = false
-        player.pauseAtEndOfMediaItems = !(prefs.autoNext || prefs.shuffle)
+        // Pausing at the end of an item would stop a looping video dead, so only pause when not looping.
+        player.pauseAtEndOfMediaItems = prefs.loop == LoopMode.OFF && !(prefs.autoNext || prefs.shuffle)
         navTick++
     }
 
@@ -927,6 +928,12 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                         detectDragGestures(
                             onDragStart = { start ->
                                 mode = 0
+                                // Leave the screen edges to the system: swiping up from the bottom (home / recents)
+                                // or in from the sides (back) must not change brightness or volume.
+                                val edge = 28.dp.toPx()
+                                if (start.y > size.height - 72.dp.toPx() || start.y < 40.dp.toPx() ||
+                                    start.x < edge || start.x > size.width - edge
+                                ) mode = 5
                                 startX = start.x
                                 startPos = player.currentPosition
                                 target = startPos
@@ -936,6 +943,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                             onDragEnd = { mode = 0 },
                             onDragCancel = { mode = 0 },
                             onDrag = { change, drag ->
+                                if (mode == 5) return@detectDragGestures
                                 change.consume()
                                 if (mode == 0) {
                                     // Horizontal swipes do nothing (seeking is the bar's job).
