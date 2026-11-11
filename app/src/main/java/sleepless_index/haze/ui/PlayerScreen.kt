@@ -1224,6 +1224,14 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                                     },
                                 )
                                 CompactMenuItem(
+                                    text = { PlayerMenuRow(GIcons.Camera, "Frame tools", prefs.frameTools) },
+                                    onClick = {
+                                        moreMenu = false
+                                        vm.setFrameTools(!prefs.frameTools)
+                                        hud = Hud(GIcons.Camera, if (!prefs.frameTools) "Frame tools on" else "Frame tools off")
+                                    },
+                                )
+                                CompactMenuItem(
                                     text = { PlayerMenuRow(GIcons.Flip, "Mirror", mirror) },
                                     onClick = {
                                         moreMenu = false
@@ -1290,8 +1298,13 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
                 }
 
                 // centre controls: previous / play / next, no background
+                // Fades out while a side HUD (seek, brightness, volume) is up, so they never overlap.
+                val sideHud = hud != null && hud?.side != 0
+                val centerAlpha by androidx.compose.animation.core.animateFloatAsState(
+                    if (sideHud) 0f else 1f, tween(120), label = "centerAlpha",
+                )
                 Row(
-                    modifier = Modifier.align(Alignment.Center),
+                    modifier = Modifier.align(Alignment.Center).graphicsLayer { alpha = centerAlpha },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(if (narrow) 20.dp else 36.dp),
                 ) {
@@ -1326,7 +1339,7 @@ fun PlayerScreen(vm: GalleryViewModel, itemId: Long, onBack: () -> Unit, onOpenV
 
                 // frame tools, only while paused
                 AnimatedVisibility(
-                    visible = showControls && !isPlaying,
+                    visible = showControls && !isPlaying && prefs.frameTools,
                     modifier = Modifier.align(Alignment.Center).padding(top = 170.dp),
                     enter = fadeIn(tween(180)),
                     exit = fadeOut(tween(120)),

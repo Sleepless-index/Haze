@@ -86,6 +86,7 @@ class GalleryViewModel(app: Application) : AndroidViewModel(app) {
     fun setStripLocation(v: Boolean) = viewModelScope.launch { g.settings.setStripLocation(v) }
     fun setVaultLock(v: String) = viewModelScope.launch { g.settings.setVaultLock(v) }
     fun setBgPlay(v: Boolean) = viewModelScope.launch { g.settings.setBgPlay(v) }
+    fun setFrameTools(v: Boolean) = viewModelScope.launch { g.settings.setFrameTools(v) }
 
     // ---- media ----------------------------------------------------------
     /** Everything MediaStore returned, including items in hidden albums. */
